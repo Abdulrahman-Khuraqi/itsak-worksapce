@@ -16,7 +16,7 @@ The first time it opens it creates `data/workspace.json` with some starter desks
 
 | Page | What it shows |
 |---|---|
-| **Today** | Overdue, due today, next 7 days, in progress, tasks without a deadline. Quick add bar. Desk progress. Pinned notes. |
+| **Today** | Overdue, due today, next 7 days, in progress, tasks without a deadline, each task on its own card. Desk progress. Pinned notes. |
 | **Desks** | One card per desk with open tasks, overdue count and next deadline. Open a desk for its To do / Doing / Done board (drag cards between columns) and its notes. |
 | **Tasks** | Every task, with search and filters by desk and status. |
 | **Calendar** | Month view of deadlines. Click a day number to add a task on that day. |

@@ -12,8 +12,7 @@
       newTask: 'New task', editTask: 'Edit task', newDesk: 'New desk', editDesk: 'Edit desk', newNote: 'New note', editNote: 'Edit note',
       morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening',
       overdue: 'Overdue', dueToday: 'Due today', next7: 'Next 7 days', done7: 'Done, last 7 days',
-      quickAdd: 'Add a task and press Enter', add: 'Add',
-      deadlines: 'Your tasks', comingUp: 'Coming up', later: 'Later', allClear: 'No open tasks. Add one above.',
+      deadlines: 'Your tasks', comingUp: 'Coming up', later: 'Later', allClear: 'No open tasks. Tap + to add one.',
       inProgress: 'In progress', pinned: 'Pinned', noPinned: 'Pin a note to keep it on this page.',
       todo: 'To do', doing: 'Doing', done: 'Done',
       low: 'Low', normal: 'Normal', high: 'High',
@@ -49,8 +48,7 @@
       newTask: 'مهمة جديدة', editTask: 'تعديل المهمة', newDesk: 'مكتب جديد', editDesk: 'تعديل المكتب', newNote: 'ملاحظة جديدة', editNote: 'تعديل الملاحظة',
       morning: 'صباح الخير', afternoon: 'مساء الخير', evening: 'مساء الخير',
       overdue: 'متأخرة', dueToday: 'موعدها اليوم', next7: 'خلال 7 أيام', done7: 'أُنجزت آخر 7 أيام',
-      quickAdd: 'اكتب مهمة واضغط Enter', add: 'إضافة',
-      deadlines: 'مهامك', comingUp: 'القادمة', later: 'لاحقًا', allClear: 'لا توجد مهام مفتوحة. أضف مهمة من الأعلى.',
+      deadlines: 'مهامك', comingUp: 'القادمة', later: 'لاحقًا', allClear: 'لا توجد مهام مفتوحة. اضغط + لإضافة مهمة.',
       inProgress: 'قيد العمل', pinned: 'مثبتة', noPinned: 'ثبّت ملاحظة لتظهر في هذه الصفحة.',
       todo: 'للعمل', doing: 'قيد العمل', done: 'منجزة',
       low: 'منخفضة', normal: 'عادية', high: 'عالية',
@@ -97,7 +95,6 @@
   const state = {
     data: { desks: [], tasks: [], notes: [] },
     lang: (store.get('lang') || (navigator.language || '').slice(0, 2)) === 'ar' ? 'ar' : 'en',
-    quick: { title: '', deskId: store.get('quickDesk') || '', due: '' },
     route: { view: 'today', id: null },
     filters: { q: '', desk: '', status: 'open', sort: 'mine', noteQ: '', noteDesk: '' },
     month: [now.getFullYear(), now.getMonth()],
@@ -282,19 +279,20 @@
     `<button type="button" class="handle" id="h-${esc(t.id)}" data-handle aria-label="${esc(tr('dragToMove'))}" title="${esc(tr('dragToMove'))}">${icon('grip')}</button>`;
 
   function taskRow(t, { showDesk = true, sortable = false } = {}) {
+    const high = t.priority === 'high' && isOpen(t);
     const meta = [
+      dueBadge(t),
       showDesk ? deskChip(deskById(t.deskId)) : '',
-      stepsPill(t),
       t.status === 'doing' ? `<span class="pill doing">${tr('doing')}</span>` : '',
-      t.priority === 'high' && isOpen(t) ? `<span class="pill high">${tr('high')}</span>` : '',
+      high ? `<span class="pill high">${tr('high')}</span>` : '',
+      stepsPill(t),
     ].join('');
-    return `<li class="task ${isOpen(t) ? '' : 'is-done'}" data-sort-id="${esc(t.id)}">
+    return `<li class="task ${isOpen(t) ? '' : 'is-done'} ${high ? 'is-high' : ''}" data-sort-id="${esc(t.id)}">
       ${sortable ? dragHandle(t) : ''}${checkButton(t)}
       <button class="task-open" data-act="edit-task" data-id="${esc(t.id)}">
         <span class="task-title" dir="auto">${esc(t.title)}</span>
         ${meta ? `<span class="task-meta">${meta}</span>` : ''}
       </button>
-      ${dueBadge(t)}
     </li>`;
   }
 
@@ -441,19 +439,9 @@
         ${stat('is-soon', tr('next7'), groups.week.length)}
         ${stat('is-done', tr('done7'), doneWeek)}
       </div>
-      <form class="quick-add" id="quick-add" autocomplete="off">
-        <div class="qa-main">
-          <input id="quick-title" name="title" value="${esc(state.quick.title)}" data-quick="title" placeholder="${esc(tr('quickAdd'))}" aria-label="${esc(tr('quickAdd'))}" maxlength="200" dir="auto" required>
-          <button class="btn primary">${icon('plus')}<span>${tr('add')}</span></button>
-        </div>
-        <div class="qa-opts">
-          <select id="quick-desk" name="deskId" data-quick="deskId" aria-label="${esc(tr('desk'))}">${deskOptions(state.quick.deskId)}</select>
-          ${dueChips(state.quick.due, 'quick-due')}
-        </div>
-      </form>
       <div class="today-grid">
-        <div class="panel">
-          <h2>${tr('deadlines')}</h2>
+        <div class="today-tasks">
+          <h2 class="section-title">${tr('deadlines')}</h2>
           ${section(tr('overdue'), 'is-late', groups.overdue)}
           ${section(tr('dueToday'), 'is-today', groups.today, 0, 'today')}
           ${section(tr('comingUp'), 'is-soon', groups.week)}
@@ -568,7 +556,7 @@
         </select>
       </div>
       ${sortable ? `<p class="hint sort-hint">${tr('sortHint')}</p>` : ''}
-      <div class="panel">${list.length ? taskList(list, { sortKey: sortable ? 'all' : '' }) : `<p class="empty">${tr('noTasks')}</p>`}</div>`;
+      ${list.length ? taskList(list, { sortKey: sortable ? 'all' : '' }) : `<p class="empty big">${tr('noTasks')}</p>`}`;
   }
 
   function viewCalendar() {
@@ -613,8 +601,8 @@
         ${weekdays.map((w) => `<div class="cal-wd">${esc(w)}</div>`).join('')}
         ${cells}
       </div>
-      <section class="panel">
-        <h2>${tr('monthDeadlines')}</h2>
+      <section class="month-list">
+        <h2 class="section-title">${tr('monthDeadlines')}</h2>
         ${inMonth.length ? taskList(inMonth) : `<p class="empty">${tr('noMonthDeadlines')}</p>`}
       </section>`;
   }
@@ -753,8 +741,6 @@
         const input = document.getElementById(el.closest('.chips').dataset.for);
         input.value = el.dataset.value;
         input.dispatchEvent(new Event('input', { bubbles: true }));
-        // In the quick add bar, go back to the text so Enter adds the task.
-        if (el.closest('#quick-add')) $('#quick-title').focus();
         break;
       }
       case 'step-remove': el.closest('.step').remove(); break;
@@ -802,23 +788,6 @@
 
   document.addEventListener('submit', async (e) => {
     const form = e.target;
-    if (form.id === 'quick-add') {
-      e.preventDefault();
-      const item = { ...state.quick };
-      if (!item.title.trim()) return;
-      store.set('quickDesk', item.deskId);
-      state.quick.title = '';
-      state.quick.due = '';
-      try {
-        await saveItem('tasks', { ...item, status: 'todo', priority: 'normal' });
-      } catch {
-        state.quick.title = item.title;
-        render();
-      }
-      const title = $('#quick-title');
-      if (title) title.focus();
-      return;
-    }
     if (!form.dataset.form) return;
     e.preventDefault();
     const type = form.dataset.form;
@@ -843,7 +812,6 @@
   document.addEventListener('input', (e) => {
     const el = e.target;
     if (el.type === 'date') syncChips(el);
-    if (el.dataset.quick) { state.quick[el.dataset.quick] = el.value; return; }
     if (el.dataset.filter) { state.filters[el.dataset.filter] = el.value; render(); }
   });
 
