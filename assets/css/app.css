@@ -50,6 +50,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
@@ -192,6 +193,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 .pill { font-size: 11.5px; padding: 1px 8px; border-radius: 99px; font-weight: 500; }
 .pill.doing { background: var(--purple-800); color: var(--purple-200); }
 .pill.high { background: var(--orange-900); color: var(--orange-300); }
+/* Waiting on someone else: outlined amber with an hourglass, so it reads differently from High */
+.pill.waiting {
+  display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 2px 9px 2px 7px;
+  border: 1px solid rgba(255, 192, 107, .45); background: transparent; color: var(--orange-300);
+}
+.pill.waiting bdi { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill.waiting .icon { width: 13px; height: 13px; flex: none; }
 
 .due { font-size: 13px; color: var(--muted); white-space: nowrap; font-weight: 500; }
 .due.is-late { color: var(--late); }
@@ -269,6 +277,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 .seg-opt span { display: block; text-align: center; padding: 7px 6px; border-radius: 7px; font-size: 13.5px; font-weight: 500; color: var(--muted); white-space: nowrap; }
 .seg-opt input:checked + span { background: var(--zinc-700); color: #fff; }
 .seg-opt.v-doing input:checked + span { background: var(--purple-500); }
+.seg-opt.v-waiting input:checked + span { background: var(--orange-300); color: #000; }
 .seg-opt.v-done input:checked + span { background: var(--zinc-600); }
 .seg-opt.v-high input:checked + span { background: var(--orange-500); color: #000; }
 .seg-opt input:focus-visible + span { outline: 2px solid var(--purple-300); outline-offset: 1px; }
@@ -319,6 +328,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 .group.is-today h3 { color: var(--orange-500); }
 .group.is-soon h3 { color: var(--purple-300); }
 .group.is-doing h3 { color: var(--zinc-300); }
+.group.is-waiting h3 { color: var(--orange-300); }
 .group.is-nodate h3, .group.is-later h3 { color: var(--muted); }
 .group-count { font: 500 11.5px/1 var(--body); color: var(--muted); background: var(--zinc-800); padding: 3px 7px; border-radius: 99px; letter-spacing: 0; }
 
@@ -351,12 +361,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 }
 .desk-card-add::before { display: none; }
 
-.board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .column { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; min-height: 160px; }
 .column-head { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 0 4px 10px; min-height: 38px; }
 .column-head .icon-btn { margin-inline-start: auto; width: 28px; height: 28px; }
 .column-head::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--zinc-500); }
 .column-head.s-doing::before { background: var(--purple-400); }
+.column-head.s-waiting::before { background: var(--orange-300); }
 .column-head.s-done::before { background: var(--zinc-700); }
 .cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; min-height: 64px; }
 .cards:has([data-sort-id]) .column-empty { display: none; }
@@ -487,6 +498,10 @@ body.is-sorting, body.is-sorting * { cursor: grabbing !important; user-select: n
 .login-error { margin: 0; color: var(--late); font-size: 14px; }
 
 /* ---------- Smaller screens ---------- */
+
+@media (max-width: 1200px) {
+  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 @media (max-width: 1080px) {
   .today-grid { grid-template-columns: minmax(0, 1fr); }

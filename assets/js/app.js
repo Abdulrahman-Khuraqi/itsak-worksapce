@@ -14,7 +14,8 @@
       overdue: 'Overdue', dueToday: 'Due today', next7: 'Next 7 days', done7: 'Done, last 7 days',
       deadlines: 'Your tasks', comingUp: 'Coming up', later: 'Later', allClear: 'No open tasks. Tap + to add one.',
       inProgress: 'In progress', pinned: 'Pinned', noPinned: 'Pin a note to keep it on this page.',
-      todo: 'To do', doing: 'Doing', done: 'Done',
+      todo: 'To do', doing: 'Doing', waiting: 'Waiting', done: 'Done',
+      waitingFor: 'Waiting for', waitingForPh: 'e.g. logo files from the client', waitingGroup: 'Waiting on others',
       low: 'Low', normal: 'Normal', high: 'High',
       title: 'Title', desk: 'Desk', status: 'Status', priority: 'Priority', due: 'Deadline', details: 'Details',
       name: 'Name', color: 'Colour', description: 'Description', body: 'Text', pin: 'Pin to Today',
@@ -50,7 +51,8 @@
       overdue: 'متأخرة', dueToday: 'موعدها اليوم', next7: 'خلال 7 أيام', done7: 'أُنجزت آخر 7 أيام',
       deadlines: 'مهامك', comingUp: 'القادمة', later: 'لاحقًا', allClear: 'لا توجد مهام مفتوحة. اضغط + لإضافة مهمة.',
       inProgress: 'قيد العمل', pinned: 'مثبتة', noPinned: 'ثبّت ملاحظة لتظهر في هذه الصفحة.',
-      todo: 'للعمل', doing: 'قيد العمل', done: 'منجزة',
+      todo: 'للعمل', doing: 'قيد العمل', waiting: 'بانتظار', done: 'منجزة',
+      waitingFor: 'بانتظار ماذا؟', waitingForPh: 'مثلًا: ملفات الشعار من الزبون', waitingGroup: 'بانتظار الآخرين',
       low: 'منخفضة', normal: 'عادية', high: 'عالية',
       title: 'العنوان', desk: 'المكتب', status: 'الحالة', priority: 'الأولوية', due: 'الموعد النهائي', details: 'التفاصيل',
       name: 'الاسم', color: 'اللون', description: 'الوصف', body: 'النص', pin: 'تثبيت في صفحة اليوم',
@@ -82,7 +84,8 @@
   };
 
   const DESK_COLORS = ['purple', 'lilac', 'orange', 'amber', 'red', 'zinc', 'white'];
-  const STATUSES = ['todo', 'doing', 'done'];
+  // waiting = blocked on someone else (client files, a service that is down, …)
+  const STATUSES = ['todo', 'doing', 'waiting', 'done'];
   const PRIORITIES = ['low', 'normal', 'high'];
   const PRIORITY_RANK = { high: 0, normal: 1, low: 2 };
 
@@ -130,6 +133,7 @@
   // Which group a task falls into on the Today page.
   function bucket(t, today = todayYmd()) {
     if (!isOpen(t)) return 'done';
+    if (t.status === 'waiting') return 'waiting';
     if (!t.due) return 'nodate';
     if (t.due < today) return 'overdue';
     if (t.due === today) return 'today';
@@ -153,7 +157,7 @@
       total: tasks.length,
       open: open.length,
       done: tasks.length - open.length,
-      overdue: open.filter((t) => t.due && t.due < today).length,
+      overdue: open.filter((t) => t.due && t.due < today && t.status !== 'waiting').length,
       next: open.filter((t) => t.due).sort(byDeadline)[0] || null,
       notes: state.data.notes.filter((n) => n.deskId === id).length,
     };
@@ -174,6 +178,7 @@
     logout: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
     pin: '<path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    waiting: '<path d="M6 3h12M6 21h12M7 3v3.5a5 5 0 0 0 10 0V3M7 21v-3.5a5 5 0 0 1 10 0V21"/>',
     chevron: '<path d="m9 6 6 6-6 6"/>',
     grip: '<circle cx="9" cy="6" r=".9"/><circle cx="15" cy="6" r=".9"/><circle cx="9" cy="12" r=".9"/><circle cx="15" cy="12" r=".9"/><circle cx="9" cy="18" r=".9"/><circle cx="15" cy="18" r=".9"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
@@ -237,6 +242,8 @@
       else if (n === 1) { text = tr('tomorrow'); cls = 'is-soon'; }
       else if (n <= 7) { text = tr('inDays', { n }); cls = 'is-soon'; }
     }
+    // Waiting on someone else: keep the date, but not the urgent colour.
+    if (t.status === 'waiting') cls = '';
     return `<time class="due ${cls}" datetime="${esc(t.due)}" title="${esc(fmtLong(t.due))}">${esc(text)}</time>`;
   }
 
@@ -275,6 +282,9 @@
     <button type="button" class="icon-btn" data-act="step-remove" aria-label="${esc(tr('removeStep'))}">${icon('close')}</button>
   </li>`;
 
+  const waitingPill = (t) => t.status !== 'waiting' ? '' :
+    `<span class="pill waiting" title="${esc(tr('waitingFor'))}">${icon('waiting')}<bdi>${esc(t.waitingFor ? `${tr('waiting')}: ${t.waitingFor}` : tr('waiting'))}</bdi></span>`;
+
   const dragHandle = (t) =>
     `<button type="button" class="handle" id="h-${esc(t.id)}" data-handle aria-label="${esc(tr('dragToMove'))}" title="${esc(tr('dragToMove'))}">${icon('grip')}</button>`;
 
@@ -284,6 +294,7 @@
       dueBadge(t),
       showDesk ? deskChip(deskById(t.deskId)) : '',
       t.status === 'doing' ? `<span class="pill doing">${tr('doing')}</span>` : '',
+      waitingPill(t),
       high ? `<span class="pill high">${tr('high')}</span>` : '',
       stepsPill(t),
     ].join('');
@@ -337,7 +348,7 @@
   function renderSide() {
     const today = todayYmd();
     const open = state.data.tasks.filter(isOpen);
-    const urgent = open.filter((t) => t.due && t.due <= today).length;
+    const urgent = open.filter((t) => t.due && t.due <= today && t.status !== 'waiting').length;
     const nav = [
       ['today', urgent],
       ['desks', state.data.desks.length],
@@ -420,8 +431,9 @@
     open.forEach((t) => { const b = bucket(t, today); if (groups[b]) groups[b].push(t); });
     groups.today.sort(byOrder);
     const doing = open.filter((t) => t.status === 'doing' && !['overdue', 'today', 'week'].includes(bucket(t, today))).sort(byOrder);
-    const noDate = open.filter((t) => !t.due && t.status !== 'doing').sort(byOrder);
-    const later = open.filter((t) => bucket(t, today) === 'later' && t.status !== 'doing');
+    const noDate = open.filter((t) => !t.due && t.status === 'todo').sort(byOrder);
+    const waiting = open.filter((t) => t.status === 'waiting').sort(byOrder);
+    const later = open.filter((t) => bucket(t, today) === 'later' && t.status === 'todo');
     const weekAgo = Date.now() - 7 * 86400000;
     const doneWeek = state.data.tasks.filter((t) => !isOpen(t) && t.doneAt && Date.parse(t.doneAt) >= weekAgo).length;
     const pinned = state.data.notes.filter((n) => n.pinned).sort((a, b) => b.updated.localeCompare(a.updated));
@@ -446,6 +458,7 @@
           ${section(tr('dueToday'), 'is-today', groups.today, 0, 'today')}
           ${section(tr('comingUp'), 'is-soon', groups.week)}
           ${section(tr('inProgress'), 'is-doing', doing, 0, 'doing')}
+          ${section(tr('waitingGroup'), 'is-waiting', waiting, 0, 'waiting')}
           ${section(tr('noDeadline'), 'is-nodate', noDate, 8, 'nodate')}
           ${section(tr('later'), 'is-later', later, 5)}
           ${open.length ? '' : `<p class="empty">${tr('allClear')}</p>`}
@@ -680,10 +693,10 @@
       <label class="field"><span>${tr('title')}</span><input name="title" maxlength="200" value="${esc(t.title || '')}" dir="auto" required autofocus></label>
       <label class="field"><span>${tr('desk')}</span><select name="deskId">${deskOptions(t.deskId || '')}</select></label>
       <div class="field"><span>${tr('due')}</span>${dueChips(t.due, 'task-due')}</div>
-      <div class="row">
-        <div class="field"><span>${tr('status')}</span>${segmented('status', STATUSES, t.status || 'todo')}</div>
-        <div class="field"><span>${tr('priority')}</span>${segmented('priority', PRIORITIES, t.priority || 'normal')}</div>
-      </div>
+      <div class="field"><span>${tr('status')}</span>${segmented('status', STATUSES, t.status || 'todo')}</div>
+      <label class="field waiting-for" ${t.status === 'waiting' ? '' : 'hidden'}><span>${tr('waitingFor')}</span>
+        <input name="waitingFor" maxlength="200" value="${esc(t.waitingFor || '')}" placeholder="${esc(tr('waitingForPh'))}" dir="auto"></label>
+      <div class="field"><span>${tr('priority')}</span>${segmented('priority', PRIORITIES, t.priority || 'normal')}</div>
       <div class="field"><span>${tr('checklist')}</span>
         <ul class="step-list" id="steps">${(t.checklist || []).map(stepRow).join('')}</ul>
         <input id="step-new" class="step-new" placeholder="${esc(tr('addStep'))}" maxlength="200" dir="auto" aria-label="${esc(tr('addStep'))}">
@@ -813,6 +826,14 @@
     const el = e.target;
     if (el.type === 'date') syncChips(el);
     if (el.dataset.filter) { state.filters[el.dataset.filter] = el.value; render(); }
+  });
+
+  // Picking "Waiting" in the task window shows the "waiting for" field.
+  document.addEventListener('change', (e) => {
+    if (e.target.name !== 'status' || !modal.contains(e.target)) return;
+    const box = modal.querySelector('.waiting-for');
+    box.hidden = e.target.value !== 'waiting';
+    if (!box.hidden) box.querySelector('input').focus();
   });
 
   // Enter in the steps list adds a step instead of saving the task.

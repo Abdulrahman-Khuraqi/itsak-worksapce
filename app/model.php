@@ -5,7 +5,8 @@ declare(strict_types=1);
 
 const WS_TYPES = ['desks', 'tasks', 'notes'];
 const DESK_COLORS = ['purple', 'lilac', 'orange', 'amber', 'red', 'zinc', 'white'];
-const TASK_STATUSES = ['todo', 'doing', 'done'];
+// waiting: blocked on someone else (files from the client, a service that is down, …).
+const TASK_STATUSES = ['todo', 'doing', 'waiting', 'done'];
 const TASK_PRIORITIES = ['low', 'normal', 'high'];
 
 // Trims and cuts text to $max characters. Works without the mbstring extension.
@@ -107,6 +108,8 @@ function clean_item(string $type, array $in, ?array $old, array $deskIds, bool $
                 'due' => clean_date($in['due'] ?? null),
                 'notes' => clip($in['notes'] ?? '', 5000),
                 'checklist' => clean_checklist($in['checklist'] ?? []),
+                // What the task is waiting for; only kept while the status is "waiting".
+                'waitingFor' => $status === 'waiting' ? clip($in['waitingFor'] ?? '', 200) : '',
                 'doneAt' => $doneAt,
                 // Position in "my order" lists; lower comes first. Set by save_item and reorder_tasks.
                 'order' => $old['order'] ?? ($import && is_int($in['order'] ?? null) ? $in['order'] : null),

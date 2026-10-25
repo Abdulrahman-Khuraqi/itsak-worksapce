@@ -17,7 +17,7 @@ The first time it opens it creates `data/workspace.json` with some starter desks
 | Page | What it shows |
 |---|---|
 | **Today** | Overdue, due today, next 7 days, in progress, tasks without a deadline, each task on its own card. Desk progress. Pinned notes. |
-| **Desks** | One card per desk with open tasks, overdue count and next deadline. Open a desk for its To do / Doing / Done board (drag cards between columns) and its notes. |
+| **Desks** | One card per desk with open tasks, overdue count and next deadline. Open a desk for its To do / Doing / Waiting / Done board (drag cards between columns) and its notes. |
 | **Tasks** | Every task, with search and filters by desk and status. |
 | **Calendar** | Month view of deadlines. Click a day number to add a task on that day. |
 | **Notes & info** | Links, contacts, ideas, meeting notes. Links become clickable. Pin a note to show it on Today. |
@@ -30,6 +30,7 @@ Other things:
 
 - **English / العربية:** the switch at the bottom of the sidebar. The Arabic view is fully right to left.
 - **Your own order:** drag the ⋮⋮ handle (mouse or finger) to reorder tasks on the Tasks page ("My order"), on Today (Due today, In progress, No deadline) and on a desk's board, where you can also drag between To do / Doing / Done. With the handle selected, the arrow keys move a task too.
+- **Waiting:** set a task to *Waiting* when it is blocked on someone else (files from the client, a service that is down) and note what for. Waiting tasks get their own group on Today and their own column on the board, and they do not count as overdue.
 - **Steps:** break a task into a checklist inside the task window; rows show progress like `2/5`.
 - **Undo:** completing or deleting a task (or deleting a note) shows an Undo button for a few seconds.
 - **Quick deadlines:** No date / Today / Tomorrow / Next week buttons when adding or editing a task.
@@ -60,9 +61,9 @@ Shape of the file:
 ```json
 {
   "desks": [{ "id": "d_…", "name": "AZ TV Store", "color": "orange", "description": "…" }],
-  "tasks": [{ "id": "t_…", "deskId": "d_…", "title": "…", "status": "todo|doing|done",
+  "tasks": [{ "id": "t_…", "deskId": "d_…", "title": "…", "status": "todo|doing|waiting|done",
               "priority": "low|normal|high", "due": "2026-10-30", "notes": "…",
-              "checklist": [{ "text": "…", "done": false }], "order": 3, "doneAt": null }],
+              "checklist": [{ "text": "…", "done": false }], "waitingFor": "…", "order": 3, "doneAt": null }],
   "notes": [{ "id": "n_…", "deskId": "d_…", "title": "…", "body": "…", "pinned": true }]
 }
 ```
