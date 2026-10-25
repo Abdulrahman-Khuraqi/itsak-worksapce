@@ -26,10 +26,28 @@ jobs:
       - name: Check PHP syntax
         run: for f in *.php lib/*.php; do php -l "$f"; done
 
+      # Hostinger shows the address as "ftp://…", so strip any scheme, path, port and spaces.
+      - name: Check FTP server address
+        id: ftp
+        env:
+          RAW: ${{ secrets.FTP_SERVER }}
+        run: |
+          host=$(printf '%s' "$RAW" | tr -d '[:space:]' | sed -E 's#^[A-Za-z]+://##; s#[/:].*$##')
+          if [ -z "$host" ]; then
+            echo "::error::FTP_SERVER secret is empty. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "::add-mask::$host"
+          if ! getent hosts "$host" > /dev/null; then
+            echo "::error::FTP_SERVER is not a server that exists. Use the FTP IP or hostname from Hostinger > Files > FTP Accounts, e.g. ftp.brxel.co or 185.x.x.x"
+            exit 1
+          fi
+          echo "host=$host" >> "$GITHUB_OUTPUT"
+
       - name: Upload over FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: ${{ steps.ftp.outputs.host }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ vars.FTP_DIR || 'public_html/ws/' }}
