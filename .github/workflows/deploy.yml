@@ -5,7 +5,7 @@
 #   FTP_HOST  FTP server, default 82.198.230.29 (the FTP IP; ftp.brxel.co has no DNS record)
 #   FTP_DIR   folder on the FTP account, default the account's own folder
 #
-# Files are only added or replaced, never deleted, so data/workspace.json, data/backups
+# Files are uploaded with curl and only added or replaced, never deleted, so data/workspace.json, data/backups
 # and config.local.php on the server are never touched.
 
 name: Deploy to Hostinger
@@ -39,9 +39,6 @@ jobs:
             --exclude 'start.sh' --exclude 'router.php' ./ "$RUNNER_TEMP/site/"
           find "$RUNNER_TEMP/site" -type f | sed "s#^$RUNNER_TEMP/site/#  #" | sort
 
-      - name: Install lftp
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
-
       - name: Upload over FTP
         env:
           FTP_USER: ${{ secrets.FTP_USERNAME }}
@@ -51,14 +48,23 @@ jobs:
             echo "::error::Add the FTP_USERNAME and FTP_PASSWORD secrets under Settings > Secrets and variables > Actions."
             exit 1
           fi
-          lftp -u "$FTP_USER,$FTP_PASS" "$FTP_HOST" <<LFTP
-          set ssl:verify-certificate no
-          set net:timeout 20
-          set net:max-retries 3
-          set net:reconnect-interval-base 5
-          mirror --reverse --verbose --no-perms "$RUNNER_TEMP/site" "$FTP_DIR"
-          bye
-          LFTP
+          cd "$RUNNER_TEMP/site"
+          prefix="${FTP_DIR#./}"
+          args=()
+          while IFS= read -r -d '' f; do
+            rel="${f#./}"
+            args+=(-T "$rel" "ftp://$FTP_HOST/$prefix${rel// /%20}")
+          done < <(find . -type f -print0 | sort -z)
+          # One connection for all files; folders are created as needed and nothing is deleted.
+          set +e
+          curl -sS --fail --ftp-create-dirs --retry 3 --user "$FTP_USER:$FTP_PASS" \
+            -w '%{response_code} %{url_effective}\n' "${args[@]}"
+          code=$?
+          set -e
+          if [ "$code" = 67 ]; then
+            echo "::error::Hostinger refused the FTP username or password. Copy them again from Hostinger > Files > FTP Accounts into the FTP_USERNAME and FTP_PASSWORD secrets."
+          fi
+          exit "$code"
 
       - name: Check the site answers
         continue-on-error: true

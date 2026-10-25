@@ -1,0 +1,2 @@
+# Open the workspace, not the Hostinger placeholder (default.php).
+DirectoryIndex index.php
