@@ -25,6 +25,7 @@ The first time it opens it creates `data/workspace.json` with some starter desks
 Other things:
 
 - **English / العربية:** the switch at the bottom of the sidebar. The Arabic view is fully right to left.
+- **Your own order:** drag the ⋮⋮ handle (mouse or finger) to reorder tasks on the Tasks page ("My order"), on Today (Due today, In progress, No deadline) and on a desk's board, where you can also drag between To do / Doing / Done. With the handle selected, the arrow keys move a task too.
 - **Steps:** break a task into a checklist inside the task window; rows show progress like `2/5`.
 - **Undo:** completing or deleting a task (or deleting a note) shows an Undo button for a few seconds.
 - **Quick deadlines:** No date / Today / Tomorrow / Next week buttons when adding or editing a task.
@@ -56,7 +57,8 @@ Shape of the file:
 {
   "desks": [{ "id": "d_…", "name": "AZ TV Store", "color": "orange", "description": "…" }],
   "tasks": [{ "id": "t_…", "deskId": "d_…", "title": "…", "status": "todo|doing|done",
-              "priority": "low|normal|high", "due": "2026-10-30", "notes": "…", "doneAt": null }],
+              "priority": "low|normal|high", "due": "2026-10-30", "notes": "…",
+              "checklist": [{ "text": "…", "done": false }], "order": 3, "doneAt": null }],
   "notes": [{ "id": "n_…", "deskId": "d_…", "title": "…", "body": "…", "pinned": true }]
 }
 ```

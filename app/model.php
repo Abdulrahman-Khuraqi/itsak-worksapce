@@ -108,6 +108,8 @@ function clean_item(string $type, array $in, ?array $old, array $deskIds, bool $
                 'notes' => clip($in['notes'] ?? '', 5000),
                 'checklist' => clean_checklist($in['checklist'] ?? []),
                 'doneAt' => $doneAt,
+                // Position in "my order" lists; lower comes first. Set by save_item and reorder_tasks.
+                'order' => $old['order'] ?? ($import && is_int($in['order'] ?? null) ? $in['order'] : null),
             ];
             if ($item['title'] === '') {
                 throw new InvalidArgumentException('A task needs a title.');
@@ -137,12 +139,59 @@ function save_item(array $data, string $type, array $in, ?string &$savedId): arr
     $item = clean_item($type, $in, $index !== null ? $list[$index] : null, array_column($data['desks'], 'id'));
 
     if ($index === null) {
+        if ($type === 'tasks') {
+            // New tasks go to the top of their list.
+            $orders = array_filter(array_column($list, 'order'), 'is_int');
+            $item['order'] = $orders ? min($orders) - 1 : 0;
+        }
         $list[] = $item;
     } else {
         $list[$index] = $item;
     }
     $data[$type] = $list;
     $savedId = $item['id'];
+    return $data;
+}
+
+// Gives every task an order number. Tasks without one (from before ordering existed) go after
+// the numbered ones, newest first, which is also how the page sorts them.
+function number_tasks(array $data): array
+{
+    $orders = array_filter(array_column($data['tasks'], 'order'), 'is_int');
+    $next = $orders ? max($orders) + 1 : 0;
+    $missing = array_keys(array_filter($data['tasks'], fn ($t) => !is_int($t['order'] ?? null)));
+    usort($missing, fn ($a, $b) => strcmp($data['tasks'][$b]['created'] ?? '', $data['tasks'][$a]['created'] ?? ''));
+    foreach ($missing as $i) {
+        $data['tasks'][$i]['order'] = $next++;
+    }
+    return $data;
+}
+
+/**
+ * Puts the tasks $ids in the given sequence, reusing their own order numbers so tasks
+ * in other lists keep their places. $movedId can also change status (dragged to another column).
+ */
+function reorder_tasks(array $data, array $ids, ?string $movedId, ?string $status): array
+{
+    $data = number_tasks($data);
+    $index = [];
+    foreach ($data['tasks'] as $i => $task) {
+        $index[$task['id']] = $i;
+    }
+    $ids = array_values(array_unique(array_filter($ids, fn ($id) => is_string($id) && isset($index[$id]))));
+
+    if ($movedId !== null && isset($index[$movedId]) && in_array($status, TASK_STATUSES, true)) {
+        $old = $data['tasks'][$index[$movedId]];
+        if ($old['status'] !== $status) {
+            $data['tasks'][$index[$movedId]] = clean_item('tasks', ['status' => $status] + $old, $old, array_column($data['desks'], 'id'));
+        }
+    }
+
+    $slots = array_map(fn ($id) => $data['tasks'][$index[$id]]['order'], $ids);
+    sort($slots);
+    foreach ($ids as $n => $id) {
+        $data['tasks'][$index[$id]]['order'] = $slots[$n];
+    }
     return $data;
 }
 

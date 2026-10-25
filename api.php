@@ -5,6 +5,8 @@ declare(strict_types=1);
 //   GET  api.php                                        -> the whole workspace
 //   POST {"action":"save",   "type":"tasks", "item":{}} -> create or update one record
 //   POST {"action":"delete", "type":"tasks", "id":"…"}  -> delete one record
+//   POST {"action":"reorder", "ids":[…], "id":"…", "status":"doing"} -> set the order of some tasks
+//                                                        (and the status of the one dragged, if given)
 //   POST {"action":"import", "data":{…}}                -> replace everything with a backup file
 // Every successful call answers {"ok":true,"data":{…}} so the page always shows what is on disk.
 
@@ -76,6 +78,12 @@ try {
                 respond(400, ['ok' => false, 'error' => 'Missing id.']);
             }
             respond(200, ['ok' => true, 'data' => ws_update(fn (array $data) => delete_item($data, $type, $id))]);
+
+        case 'reorder':
+            $ids = is_array($body['ids'] ?? null) ? $body['ids'] : [];
+            $status = is_string($body['status'] ?? null) ? $body['status'] : null;
+            $moved = clean_id($body['id'] ?? null);
+            respond(200, ['ok' => true, 'data' => ws_update(fn (array $data) => reorder_tasks($data, $ids, $moved, $status))]);
 
         case 'import':
             if (!is_array($body['data'] ?? null)) {

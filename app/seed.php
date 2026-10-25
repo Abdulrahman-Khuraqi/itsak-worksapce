@@ -47,11 +47,12 @@ function ws_seed(): array
         $data['desks'][] = clean_item('desks', $d, null, []);
     }
     $deskIds = array_column($data['desks'], 'id');
-    foreach ($tasks as [$desk, $title, $status, $priority, $due, $details]) {
-        $data['tasks'][] = clean_item('tasks', [
+    foreach ($tasks as $order => [$desk, $title, $status, $priority, $due, $details]) {
+        $task = clean_item('tasks', [
             'deskId' => $desk === null ? null : $deskIds[$desk], 'title' => $title, 'status' => $status,
             'priority' => $priority, 'due' => $due, 'notes' => $details,
         ], null, $deskIds);
+        $data['tasks'][] = ['order' => $order] + $task;
     }
     foreach ($notes as [$desk, $title, $body, $pinned]) {
         $data['notes'][] = clean_item('notes', [

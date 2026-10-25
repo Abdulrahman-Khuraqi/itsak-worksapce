@@ -21,7 +21,8 @@
       name: 'Name', color: 'Colour', description: 'Description', body: 'Text', pin: 'Pin to Today',
       save: 'Save', cancel: 'Cancel', close: 'Close', delete: 'Delete', edit: 'Edit',
       noDesk: 'No desk', allDesks: 'All desks', search: 'Search',
-      open: 'Open', all: 'All', sortDue: 'By deadline', sortNew: 'Newest first',
+      open: 'Open', all: 'All', sortDue: 'By deadline', sortNew: 'Newest first', sortMine: 'My order',
+      dragToMove: 'Drag to change the order (or use the arrow keys)', sortHint: 'Drag ⋮⋮ to change the order',
       markDone: 'Mark as done', markOpen: 'Mark as not done',
       confirmTask: 'Delete this task?', confirmNote: 'Delete this note?',
       confirmDesk: 'Delete the desk "{name}" together with its {tasks} tasks and {notes} notes?',
@@ -56,7 +57,8 @@
       name: 'الاسم', color: 'اللون', description: 'الوصف', body: 'النص', pin: 'تثبيت في صفحة اليوم',
       save: 'حفظ', cancel: 'إلغاء', close: 'إغلاق', delete: 'حذف', edit: 'تعديل',
       noDesk: 'بدون مكتب', allDesks: 'كل المكاتب', search: 'بحث',
-      open: 'المفتوحة', all: 'الكل', sortDue: 'حسب الموعد', sortNew: 'الأحدث أولًا',
+      open: 'المفتوحة', all: 'الكل', sortDue: 'حسب الموعد', sortNew: 'الأحدث أولًا', sortMine: 'ترتيبي',
+      dragToMove: 'اسحب لتغيير الترتيب (أو استخدم الأسهم)', sortHint: 'اسحب ⋮⋮ لتغيير الترتيب',
       markDone: 'تحديد كمنجزة', markOpen: 'إلغاء الإنجاز',
       confirmTask: 'حذف هذه المهمة؟', confirmNote: 'حذف هذه الملاحظة؟',
       confirmDesk: 'حذف المكتب "{name}" مع {tasks} مهام و{notes} ملاحظات؟',
@@ -95,7 +97,7 @@
     lang: (store.get('lang') || (navigator.language || '').slice(0, 2)) === 'ar' ? 'ar' : 'en',
     quick: { title: '', deskId: store.get('quickDesk') || '', due: '' },
     route: { view: 'today', id: null },
-    filters: { q: '', desk: '', status: 'open', sort: 'due', noteQ: '', noteDesk: '' },
+    filters: { q: '', desk: '', status: 'open', sort: 'mine', noteQ: '', noteDesk: '' },
     month: [now.getFullYear(), now.getMonth()],
   };
 
@@ -135,10 +137,14 @@
     return t.due <= addDays(today, 7) ? 'week' : 'later';
   }
 
+  // "My order": the order you set by dragging. Tasks from before ordering existed come last, newest first.
+  const byOrder = (a, b) =>
+    (a.order ?? Infinity) - (b.order ?? Infinity) || (b.created || '').localeCompare(a.created || '');
+
   const byDeadline = (a, b) =>
-    (a.due || '9999') .localeCompare(b.due || '9999') ||
+    (a.due || '9999').localeCompare(b.due || '9999') ||
     PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
-    (b.created || '').localeCompare(a.created || '');
+    byOrder(a, b);
 
   function deskStats(id) {
     const tasks = state.data.tasks.filter((t) => t.deskId === id);
@@ -170,6 +176,7 @@
     pin: '<path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     chevron: '<path d="m9 6 6 6-6 6"/>',
+    grip: '<circle cx="9" cy="6" r=".9"/><circle cx="15" cy="6" r=".9"/><circle cx="9" cy="12" r=".9"/><circle cx="15" cy="12" r=".9"/><circle cx="9" cy="18" r=".9"/><circle cx="15" cy="18" r=".9"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
   };
   const icon = (name, cls = '') =>
@@ -268,15 +275,18 @@
     <button type="button" class="icon-btn" data-act="step-remove" aria-label="${esc(tr('removeStep'))}">${icon('close')}</button>
   </li>`;
 
-  function taskRow(t, { showDesk = true } = {}) {
+  const dragHandle = (t) =>
+    `<button type="button" class="handle" id="h-${esc(t.id)}" data-handle aria-label="${esc(tr('dragToMove'))}" title="${esc(tr('dragToMove'))}">${icon('grip')}</button>`;
+
+  function taskRow(t, { showDesk = true, sortable = false } = {}) {
     const meta = [
       showDesk ? deskChip(deskById(t.deskId)) : '',
       stepsPill(t),
       t.status === 'doing' ? `<span class="pill doing">${tr('doing')}</span>` : '',
       t.priority === 'high' && isOpen(t) ? `<span class="pill high">${tr('high')}</span>` : '',
     ].join('');
-    return `<li class="task ${isOpen(t) ? '' : 'is-done'}">
-      ${checkButton(t)}
+    return `<li class="task ${isOpen(t) ? '' : 'is-done'}" data-sort-id="${esc(t.id)}">
+      ${sortable ? dragHandle(t) : ''}${checkButton(t)}
       <button class="task-open" data-act="edit-task" data-id="${esc(t.id)}">
         <span class="task-title" dir="auto">${esc(t.title)}</span>
         ${meta ? `<span class="task-meta">${meta}</span>` : ''}
@@ -285,7 +295,9 @@
     </li>`;
   }
 
-  const taskList = (tasks, opts) => `<ul class="tasks">${tasks.map((t) => taskRow(t, opts)).join('')}</ul>`;
+  // With opts.sortKey the list can be reordered by dragging; lists sharing a key exchange tasks.
+  const taskList = (tasks, opts = {}) =>
+    `<ul class="tasks" ${opts.sortKey ? `data-sort-list="${opts.sortKey}"` : ''}>${tasks.map((t) => taskRow(t, { ...opts, sortable: !!opts.sortKey })).join('')}</ul>`;
 
   function pageHead(eyebrow, title, actions = '') {
     return `<header class="page-head">
@@ -369,16 +381,17 @@
     const open = state.data.tasks.filter(isOpen).sort(byDeadline);
     const groups = { overdue: [], today: [], week: [] };
     open.forEach((t) => { const b = bucket(t, today); if (groups[b]) groups[b].push(t); });
-    const doing = open.filter((t) => t.status === 'doing' && !['overdue', 'today', 'week'].includes(bucket(t, today)));
-    const noDate = open.filter((t) => !t.due && t.status !== 'doing');
+    groups.today.sort(byOrder);
+    const doing = open.filter((t) => t.status === 'doing' && !['overdue', 'today', 'week'].includes(bucket(t, today))).sort(byOrder);
+    const noDate = open.filter((t) => !t.due && t.status !== 'doing').sort(byOrder);
     const later = open.filter((t) => bucket(t, today) === 'later' && t.status !== 'doing');
     const weekAgo = Date.now() - 7 * 86400000;
     const doneWeek = state.data.tasks.filter((t) => !isOpen(t) && t.doneAt && Date.parse(t.doneAt) >= weekAgo).length;
     const pinned = state.data.notes.filter((n) => n.pinned).sort((a, b) => b.updated.localeCompare(a.updated));
 
     const stat = (cls, label, value) => `<div class="stat ${cls} ${value ? '' : 'is-zero'}"><span class="stat-value">${value}</span><span class="stat-label">${label}</span></div>`;
-    const section = (title, cls, tasks, limit = 0) => tasks.length
-      ? `<section class="group ${cls}"><h3>${title}<span class="group-count">${tasks.length}</span></h3>${taskList(limit ? tasks.slice(0, limit) : tasks)}
+    const section = (title, cls, tasks, limit = 0, sortKey = '') => tasks.length
+      ? `<section class="group ${cls}"><h3>${title}<span class="group-count">${tasks.length}</span></h3>${taskList(limit ? tasks.slice(0, limit) : tasks, { sortKey: tasks.length > 1 ? sortKey : '' })}
         ${limit && tasks.length > limit ? `<a class="show-all" href="#tasks">${tr('showAll', { n: tasks.length })}</a>` : ''}</section>` : '';
 
     return `
@@ -403,10 +416,10 @@
         <div class="panel">
           <h2>${tr('deadlines')}</h2>
           ${section(tr('overdue'), 'is-late', groups.overdue)}
-          ${section(tr('dueToday'), 'is-today', groups.today)}
+          ${section(tr('dueToday'), 'is-today', groups.today, 0, 'today')}
           ${section(tr('comingUp'), 'is-soon', groups.week)}
-          ${section(tr('inProgress'), 'is-doing', doing)}
-          ${section(tr('noDeadline'), 'is-nodate', noDate, 8)}
+          ${section(tr('inProgress'), 'is-doing', doing, 0, 'doing')}
+          ${section(tr('noDeadline'), 'is-nodate', noDate, 8, 'nodate')}
           ${section(tr('later'), 'is-later', later, 5)}
           ${open.length ? '' : `<p class="empty">${tr('allClear')}</p>`}
         </div>
@@ -462,14 +475,13 @@
     const tasks = state.data.tasks.filter((t) => t.deskId === id);
     const notes = state.data.notes.filter((n) => n.deskId === id).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updated.localeCompare(a.updated));
     const columns = STATUSES.map((status) => {
-      const list = tasks.filter((t) => t.status === status)
-        .sort(status === 'done' ? (a, b) => (b.doneAt || '').localeCompare(a.doneAt || '') : byDeadline);
-      return `<section class="column" data-drop="${status}" aria-label="${esc(tr(status))}">
+      const list = tasks.filter((t) => t.status === status).sort(byOrder);
+      return `<section class="column" aria-label="${esc(tr(status))}">
         <h3 class="column-head s-${status}">${tr(status)}<span class="group-count">${list.length}</span>
           ${status !== 'done' ? `<button class="icon-btn" data-act="new-task" data-desk="${esc(id)}" data-status="${status}" aria-label="${esc(tr('newTask'))}">${icon('plus')}</button>` : ''}
         </h3>
-        <ul class="cards">${list.map((t) => `<li class="card ${isOpen(t) ? '' : 'is-done'} ${t.priority === 'high' && isOpen(t) ? 'is-high' : ''}" draggable="true" data-drag="${esc(t.id)}">
-          ${checkButton(t)}
+        <ul class="cards" data-sort-list="board" data-status="${status}">${list.map((t) => `<li class="card ${isOpen(t) ? '' : 'is-done'} ${t.priority === 'high' && isOpen(t) ? 'is-high' : ''}" data-sort-id="${esc(t.id)}">
+          ${dragHandle(t)}${checkButton(t)}
           <button class="task-open" data-act="edit-task" data-id="${esc(t.id)}"><span class="task-title" dir="auto">${esc(t.title)}</span>
           ${t.notes ? `<span class="card-notes" dir="auto">${esc(t.notes.slice(0, 120))}</span>` : ''}${stepsPill(t)}</button>
           ${dueBadge(t)}
@@ -496,7 +508,9 @@
       (f.status === 'all' || (f.status === 'open' ? isOpen(t) : t.status === f.status)) &&
       (!f.desk || (f.desk === 'none' ? !t.deskId : t.deskId === f.desk)) &&
       (!q || (t.title + ' ' + t.notes).toLowerCase().includes(q)),
-    ).sort(f.sort === 'new' ? (a, b) => b.created.localeCompare(a.created) : (a, b) => Number(!isOpen(a)) - Number(!isOpen(b)) || byDeadline(a, b));
+    ).sort(f.sort === 'new' ? (a, b) => b.created.localeCompare(a.created)
+      : (a, b) => Number(!isOpen(a)) - Number(!isOpen(b)) || (f.sort === 'mine' ? byOrder(a, b) : byDeadline(a, b)));
+    const sortable = f.sort === 'mine' && list.length > 1;
 
     return `
       ${pageHead('', tr('tasks'), newTaskButton())}
@@ -509,11 +523,13 @@
           <option value="all" ${f.status === 'all' ? 'selected' : ''}>${tr('all')}</option>
         </select>
         <select id="f-sort" data-filter="sort" aria-label="Sort">
+          <option value="mine" ${f.sort === 'mine' ? 'selected' : ''}>${tr('sortMine')}</option>
           <option value="due" ${f.sort === 'due' ? 'selected' : ''}>${tr('sortDue')}</option>
           <option value="new" ${f.sort === 'new' ? 'selected' : ''}>${tr('sortNew')}</option>
         </select>
       </div>
-      <div class="panel">${list.length ? taskList(list) : `<p class="empty">${tr('noTasks')}</p>`}</div>`;
+      ${sortable ? `<p class="hint sort-hint">${tr('sortHint')}</p>` : ''}
+      <div class="panel">${list.length ? taskList(list, { sortKey: sortable ? 'all' : '' }) : `<p class="empty">${tr('noTasks')}</p>`}</div>`;
   }
 
   function viewCalendar() {
@@ -816,30 +832,77 @@
     taskModal({ deskId: state.route.view === 'desk' ? state.route.id : '', due: '', status: 'todo' });
   });
 
-  // Drag cards between the To do / Doing / Done columns of a desk.
-  document.addEventListener('dragstart', (e) => {
-    const card = e.target instanceof Element && e.target.closest('[data-drag]');
-    if (!card) return;
-    e.dataTransfer.setData('text/plain', card.dataset.drag);
-    e.dataTransfer.effectAllowed = 'move';
-    card.classList.add('is-dragging');
-  });
-  document.addEventListener('dragend', () => {
-    document.querySelectorAll('.is-dragging, .is-over').forEach((el) => el.classList.remove('is-dragging', 'is-over'));
-  });
-  document.addEventListener('dragover', (e) => {
-    const col = e.target instanceof Element && e.target.closest('[data-drop]');
-    if (!col) return;
+  /* ---------- Reordering ----------
+     Press the ⋮⋮ handle and move (mouse or finger); the task moves live and its place is saved on release.
+     Lists with the same data-sort-list exchange tasks (the board columns), and data-status on the
+     list it lands in becomes the task's status. On a focused handle, the arrow keys move it one step. */
+
+  let drag = null;
+  const sortItems = (list) => [...list.children].filter((el) => el.dataset.sortId);
+
+  async function saveOrder(item, list) {
+    const body = { action: 'reorder', ids: sortItems(list).map((el) => el.dataset.sortId), id: item.dataset.sortId };
+    if (list.dataset.status) body.status = list.dataset.status;
+    try { await change(body, ''); } catch { render(); }
+  }
+
+  document.addEventListener('pointerdown', (e) => {
+    const handle = e.target.closest('[data-handle]');
+    if (!handle || e.button > 0) return;
     e.preventDefault();
-    document.querySelectorAll('.is-over').forEach((el) => el !== col && el.classList.remove('is-over'));
-    col.classList.add('is-over');
+    const item = handle.closest('[data-sort-id]');
+    handle.setPointerCapture(e.pointerId);
+    drag = { item, from: item.parentElement, next: item.nextElementSibling, x: e.clientX, y: e.clientY, moved: false };
   });
-  document.addEventListener('drop', async (e) => {
-    const col = e.target instanceof Element && e.target.closest('[data-drop]');
-    if (!col) return;
+
+  document.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    if (!drag.moved) {
+      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
+      drag.moved = true;
+      drag.item.classList.add('is-lifted');
+      document.body.classList.add('is-sorting');
+    }
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const list = under && under.closest('[data-sort-list]');
+    if (list && list.dataset.sortList === drag.from.dataset.sortList) {
+      const target = under.closest('[data-sort-id]');
+      if (target && target !== drag.item && target.parentElement === list) {
+        const box = target.getBoundingClientRect();
+        list.insertBefore(drag.item, e.clientY < box.top + box.height / 2 ? target : target.nextElementSibling);
+      } else if (!target) {
+        const items = sortItems(list);
+        const last = items[items.length - 1];
+        if (!last) list.prepend(drag.item);
+        else if (last !== drag.item && e.clientY > last.getBoundingClientRect().bottom) last.after(drag.item);
+      }
+    }
+    // Keep the page moving when dragging near the top or bottom edge.
+    if (e.clientY < 70) window.scrollBy(0, -12);
+    else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 12);
+  });
+
+  function endDrag() {
+    if (!drag) return;
+    const { item, from, next, moved } = drag;
+    drag = null;
+    item.classList.remove('is-lifted');
+    document.body.classList.remove('is-sorting');
+    if (moved && (item.parentElement !== from || item.nextElementSibling !== next)) saveOrder(item, item.parentElement);
+  }
+  document.addEventListener('pointerup', endDrag);
+  document.addEventListener('pointercancel', endDrag);
+
+  document.addEventListener('keydown', (e) => {
+    const handle = e.target.closest && e.target.closest('[data-handle]');
+    if (!handle || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    const item = handle.closest('[data-sort-id]');
+    const other = e.key === 'ArrowUp' ? item.previousElementSibling : item.nextElementSibling;
+    if (!other || !other.dataset.sortId) return;
     e.preventDefault();
-    const t = taskById(e.dataTransfer.getData('text/plain'));
-    if (t && t.status !== col.dataset.drop) await saveItem('tasks', { ...t, status: col.dataset.drop }, '').catch(() => {});
+    if (e.key === 'ArrowUp') other.before(item); else other.after(item);
+    handle.focus();
+    saveOrder(item, item.parentElement);
   });
 
   /* ---------- Backup ---------- */
