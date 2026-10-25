@@ -33,9 +33,9 @@ Other things:
 Every push to the `site-dev` branch uploads the workspace to Hostinger automatically (`.github/workflows/deploy.yml`).
 
 - Needs two repository secrets: `FTP_USERNAME` and `FTP_PASSWORD` (Settings → Secrets and variables → Actions). The FTP server is `82.198.230.29`; to change it, add a repository **variable** `FTP_HOST`.
-- Uploads to `public_html/ws/` when the FTP account can see `public_html`, otherwise to the FTP account's own folder. To force a folder, add a repository **variable** `FTP_DIR` (ending in `/`).
+- Uploads into the FTP account's own folder (`.../brxel.co/public_html/ws`). To use another folder, add a repository **variable** `FTP_DIR`.
 - Run it by hand from the **Actions** tab → *Deploy to Hostinger* → **Run workflow**.
-- Your data on the server (`data/workspace.json`, `data/backups/`) and `config.local.php` are never uploaded or deleted by a deploy.
+- A deploy only adds or replaces files and never deletes anything, so your data on the server (`data/workspace.json`, `data/backups/`) and `config.local.php` stay as they are.
 
 ## Where the data lives
 
