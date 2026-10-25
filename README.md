@@ -35,7 +35,8 @@ Every push to the `site-dev` branch uploads the workspace to Hostinger automatic
 - Needs two repository secrets: `FTP_USERNAME` and `FTP_PASSWORD` (Settings → Secrets and variables → Actions). The FTP server is `82.198.230.29`; to change it, add a repository **variable** `FTP_HOST`.
 - Uploads into the FTP account's own folder (`.../brxel.co/public_html/ws`). To use another folder, add a repository **variable** `FTP_DIR`.
 - Run it by hand from the **Actions** tab → *Deploy to Hostinger* → **Run workflow**.
-- A deploy only adds or replaces files and never deletes anything, so your data on the server (`data/workspace.json`, `data/backups/`) and `config.local.php` stay as they are.
+- A deploy only adds or replaces files and never deletes anything, so your data on the server (`data/workspace.json`, `data/backups/`) stays as it is.
+- **Password:** add a secret `APP_PASSWORD`; each deploy writes it to `config.local.php` on the server.
 
 ## Where the data lives
 

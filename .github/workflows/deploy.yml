@@ -1,12 +1,13 @@
 # Uploads the workspace to Hostinger (ws.brxel.co) on every push to site-dev.
 # Needs the repository secrets FTP_USERNAME and FTP_PASSWORD
 # (Hostinger > Files > FTP Accounts; the account opens in .../brxel.co/public_html/ws).
+# The secret APP_PASSWORD, when set, is written to config.local.php as the workspace password.
 # Optional repository variables (Settings > Secrets and variables > Actions > Variables):
 #   FTP_HOST  FTP server, default 82.198.230.29 (the FTP IP; ftp.brxel.co has no DNS record)
 #   FTP_DIR   folder on the FTP account, default the account's own folder
 #
-# Files are uploaded with curl and only added or replaced, never deleted, so data/workspace.json, data/backups
-# and config.local.php on the server are never touched.
+# Files are uploaded with curl and only added or replaced, never deleted, so data/workspace.json
+# and data/backups on the server are never touched.
 
 name: Deploy to Hostinger
 
@@ -33,10 +34,19 @@ jobs:
         run: for f in *.php app/*.php; do php -l "$f"; done
 
       - name: Prepare the files to upload
+        env:
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
         run: |
           mkdir -p "$RUNNER_TEMP/site"
           rsync -a --exclude '.git*' --exclude '.github' --exclude 'start workspace.bat' \
             --exclude 'start.sh' --exclude 'router.php' ./ "$RUNNER_TEMP/site/"
+          # The APP_PASSWORD secret, when set, becomes config.local.php on the server.
+          if [ -n "$APP_PASSWORD" ]; then
+            php -r 'echo "<?php\ndefine(\"APP_PASSWORD\", " . var_export(getenv("APP_PASSWORD"), true) . ");\n";' > "$RUNNER_TEMP/site/config.local.php"
+            echo "Password: set from the APP_PASSWORD secret"
+          else
+            echo "::warning::No APP_PASSWORD secret, so the workspace has no sign-in. Add one under Settings > Secrets and variables > Actions."
+          fi
           find "$RUNNER_TEMP/site" -type f | sed "s#^$RUNNER_TEMP/site/#  #" | sort
 
       - name: Upload over FTP
