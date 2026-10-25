@@ -69,6 +69,9 @@ button { cursor: pointer; }
 .chev.flip, [dir="rtl"] .chev { transform: scaleX(-1); }
 [dir="rtl"] .chev.flip { transform: none; }
 .muted { color: var(--muted); }
+/* Mixed Arabic/English text keeps its own direction but lines up with the page. */
+html[dir="ltr"] :not(input):not(textarea)[dir="auto"] { text-align: left; }
+html[dir="rtl"] :not(input):not(textarea)[dir="auto"] { text-align: right; }
 .grow { flex: 1; }
 .loading, .hint { color: var(--faint); font-size: 13px; }
 .hint { margin-top: 28px; }
@@ -133,6 +136,16 @@ button { cursor: pointer; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dc, var(--zinc-500)); flex: none; display: inline-block; }
 
 /* ---------- Common pieces ---------- */
+
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  background: var(--zinc-900); border: 1px solid var(--zinc-800); border-radius: 10px;
+  height: 40px; padding: 0 12px; min-width: 0;
+}
+textarea { height: auto; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--purple-400); }
+input::placeholder, textarea::placeholder { color: var(--faint); }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); cursor: pointer; }
+
 
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 28px; }
 .page-head h1 { font-size: clamp(28px, 3.4vw, 40px); font-weight: 900; }
@@ -228,12 +241,62 @@ button { cursor: pointer; }
 .stat.is-done { --sc: var(--zinc-500); }
 
 .quick-add {
-  display: flex; gap: 8px; margin-bottom: 20px; padding: 8px;
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; padding: 8px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
 }
 .quick-add:focus-within { border-color: var(--purple-500); }
-.quick-add input[name="title"] { flex: 1; min-width: 0; background: none; border: 0; padding: 0 10px; outline: none; font-size: 15.5px; }
-.quick-add select, .quick-add input[type="date"] { max-width: 170px; }
+.qa-main { display: flex; gap: 8px; }
+.quick-add input[name="title"] { flex: 1; min-width: 0; background: none; border: 0; padding: 0 10px; outline: none; font-size: 16px; height: 44px; }
+.qa-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 2px 2px; }
+.qa-opts select { height: 34px; font-size: 13.5px; max-width: 190px; }
+
+/* Deadline buttons: No date / Today / Tomorrow / Next week + a date field */
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.chip-btn {
+  height: 34px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--zinc-800);
+  background: var(--zinc-900); color: var(--zinc-300); font-size: 13.5px; font-weight: 500; white-space: nowrap;
+}
+.chip-btn:hover { border-color: var(--zinc-600); color: var(--text); }
+.chip-btn.is-on { background: var(--purple-500); border-color: var(--purple-500); color: #fff; }
+.chips input.date-mini { height: 34px; font-size: 13.5px; padding: 0 10px; width: auto; }
+
+/* One-tap choices for status and priority */
+.seg-radio { display: flex; gap: 4px; padding: 3px; background: var(--zinc-900); border: 1px solid var(--zinc-800); border-radius: 10px; }
+.seg-opt { flex: 1; position: relative; }
+.seg-opt input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.seg-opt span { display: block; text-align: center; padding: 7px 6px; border-radius: 7px; font-size: 13.5px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.seg-opt input:checked + span { background: var(--zinc-700); color: #fff; }
+.seg-opt.v-doing input:checked + span { background: var(--purple-500); }
+.seg-opt.v-done input:checked + span { background: var(--zinc-600); }
+.seg-opt.v-high input:checked + span { background: var(--orange-500); color: #000; }
+.seg-opt input:focus-visible + span { outline: 2px solid var(--purple-300); outline-offset: 1px; }
+
+/* Steps inside a task */
+.step-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.step-list:empty { display: none; }
+.step { display: flex; align-items: center; gap: 8px; }
+.step-done { width: 18px; height: 18px; flex: none; accent-color: var(--purple-500); margin: 0; }
+.step input.step-text { flex: 1; height: 36px; background: transparent; border-color: transparent; padding: 0 8px; }
+.step input.step-text:hover { border-color: var(--zinc-800); }
+.step input.step-text:focus { border-color: var(--purple-400); background: var(--zinc-900); }
+.step-done:checked + .step-text { color: var(--faint); text-decoration: line-through; }
+.step .icon-btn { width: 28px; height: 28px; opacity: .6; }
+.step .icon-btn:hover { opacity: 1; }
+.field input.step-new { height: 38px; border-style: dashed; }
+.pill.steps { display: inline-flex; align-items: center; gap: 4px; flex: none; white-space: nowrap; background: var(--zinc-800); color: var(--zinc-300); }
+.pill.steps .icon { width: 13px; height: 13px; }
+.pill.steps.is-full { background: var(--purple-800); color: var(--purple-200); }
+.card .pill.steps { align-self: flex-start; margin-top: 4px; }
+.show-all { display: inline-block; margin-top: 6px; font-size: 13.5px; color: var(--accent-text); text-decoration: none; }
+.show-all:hover { text-decoration: underline; }
+
+/* Floating new-task button (phones) */
+.fab {
+  display: none; position: fixed; inset-inline-end: 18px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 20;
+  width: 58px; height: 58px; border-radius: 50%; border: 0; place-items: center;
+  background: var(--purple-500); color: #fff; box-shadow: 0 10px 30px rgba(102, 45, 139, .55);
+}
+.fab .icon { width: 26px; height: 26px; }
 
 .today-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .today-side .panel + .panel { margin-top: 20px; }
@@ -244,6 +307,7 @@ button { cursor: pointer; }
 .group.is-today h3 { color: var(--orange-500); }
 .group.is-soon h3 { color: var(--purple-300); }
 .group.is-doing h3 { color: var(--zinc-300); }
+.group.is-nodate h3, .group.is-later h3 { color: var(--muted); }
 .group-count { font: 500 11.5px/1 var(--body); color: var(--muted); background: var(--zinc-800); padding: 3px 7px; border-radius: 99px; letter-spacing: 0; }
 
 .mini-desks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -319,14 +383,6 @@ button { cursor: pointer; }
 .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
 .filters input[type="search"] { flex: 1 1 240px; }
 
-input:not([type="checkbox"]):not([type="radio"]), select, textarea {
-  background: var(--zinc-900); border: 1px solid var(--zinc-800); border-radius: 10px;
-  height: 40px; padding: 0 12px; min-width: 0;
-}
-textarea { height: auto; padding: 10px 12px; resize: vertical; line-height: 1.5; }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--purple-400); }
-input::placeholder, textarea::placeholder { color: var(--faint); }
-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); cursor: pointer; }
 
 /* ---------- Calendar ---------- */
 
@@ -392,6 +448,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 .toast.is-shown { opacity: 1; transform: translate(-50%, 0); }
 [dir="rtl"] .toast.is-shown { transform: translate(50%, 0); }
 .toast.is-error { background: var(--red-500); color: #fff; }
+.toast { display: flex; align-items: center; gap: 14px; }
+.toast.has-action { pointer-events: auto; padding-inline-end: 8px; }
+.toast-undo { border: 0; background: var(--purple-500); color: #fff; font-weight: 600; padding: 6px 12px; border-radius: 7px; }
 
 /* ---------- Login ---------- */
 
@@ -424,9 +483,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
   .nav-link { width: auto; white-space: nowrap; padding: 8px 12px; }
   .main { padding: 24px 16px 48px; }
   .board { grid-template-columns: minmax(0, 1fr); }
-  .quick-add { flex-wrap: wrap; }
-  .quick-add input[name="title"] { flex-basis: 100%; height: 40px; }
-  .quick-add select, .quick-add input[type="date"] { flex: 1; max-width: none; }
+  .qa-opts select { flex: 1 1 100%; max-width: none; }
+  .fab { display: grid; }
+  .main { padding-bottom: 96px; }
+  .toast { bottom: calc(90px + env(safe-area-inset-bottom)); }
   .cal-cell { min-height: 64px; padding: 3px; }
   .cal-wd { padding: 8px 4px; font-size: 11px; text-align: center; }
   .cal-day { width: 26px; height: 26px; font-size: 12.5px; }

@@ -16,7 +16,7 @@ The first time it opens it creates `data/workspace.json` with some starter desks
 
 | Page | What it shows |
 |---|---|
-| **Today** | Overdue, due today, next 7 days, in progress. Quick add bar. Desk progress. Pinned notes. |
+| **Today** | Overdue, due today, next 7 days, in progress, tasks without a deadline. Quick add bar. Desk progress. Pinned notes. |
 | **Desks** | One card per desk with open tasks, overdue count and next deadline. Open a desk for its To do / Doing / Done board (drag cards between columns) and its notes. |
 | **Tasks** | Every task, with search and filters by desk and status. |
 | **Calendar** | Month view of deadlines. Click a day number to add a task on that day. |
@@ -25,7 +25,10 @@ The first time it opens it creates `data/workspace.json` with some starter desks
 Other things:
 
 - **English / العربية:** the switch at the bottom of the sidebar. The Arabic view is fully right to left.
-- **Keyboard:** press `N` anywhere to add a task.
+- **Steps:** break a task into a checklist inside the task window; rows show progress like `2/5`.
+- **Undo:** completing or deleting a task (or deleting a note) shows an Undo button for a few seconds.
+- **Quick deadlines:** No date / Today / Tomorrow / Next week buttons when adding or editing a task.
+- **Keyboard:** press `N` anywhere to add a task. On phones, use the round + button.
 - **Export backup** downloads everything as one JSON file. **Import backup** puts it back (and keeps a copy of what was there).
 
 ## Live site: ws.brxel.co

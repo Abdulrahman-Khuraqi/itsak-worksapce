@@ -13,7 +13,7 @@
       morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening',
       overdue: 'Overdue', dueToday: 'Due today', next7: 'Next 7 days', done7: 'Done, last 7 days',
       quickAdd: 'Add a task and press Enter', add: 'Add',
-      deadlines: 'Your deadlines', comingUp: 'Coming up', allClear: 'Nothing due in the next 7 days.',
+      deadlines: 'Your tasks', comingUp: 'Coming up', later: 'Later', allClear: 'No open tasks. Add one above.',
       inProgress: 'In progress', pinned: 'Pinned', noPinned: 'Pin a note to keep it on this page.',
       todo: 'To do', doing: 'Doing', done: 'Done',
       low: 'Low', normal: 'Normal', high: 'High',
@@ -38,6 +38,9 @@
       prevMonth: 'Previous month', nextMonth: 'Next month', thisMonth: 'This month', more: '+{n} more',
       addOn: 'New task on {d}', updated: 'Updated {d}', backToDesks: 'All desks', taskCount: '{n} tasks',
       shortcut: 'Press N for a new task', noteWord: 'notes', openWord: 'open',
+      noDeadline: 'No deadline', showAll: 'Show all {n}', checklist: 'Steps', addStep: 'Add a step and press Enter',
+      removeStep: 'Remove step', undo: 'Undo', markedDone: 'Marked as done', taskDeleted: 'Task deleted', noteDeleted: 'Note deleted',
+      noDate: 'No date', nextWeek: 'Next week', pickDate: 'Pick a date',
     },
     ar: {
       today: 'اليوم', desks: 'المكاتب', tasks: 'المهام', calendar: 'التقويم', notes: 'ملاحظات ومعلومات',
@@ -45,7 +48,7 @@
       morning: 'صباح الخير', afternoon: 'مساء الخير', evening: 'مساء الخير',
       overdue: 'متأخرة', dueToday: 'موعدها اليوم', next7: 'خلال 7 أيام', done7: 'أُنجزت آخر 7 أيام',
       quickAdd: 'اكتب مهمة واضغط Enter', add: 'إضافة',
-      deadlines: 'مواعيدك', comingUp: 'القادمة', allClear: 'لا شيء مستحق خلال الأيام السبعة القادمة.',
+      deadlines: 'مهامك', comingUp: 'القادمة', later: 'لاحقًا', allClear: 'لا توجد مهام مفتوحة. أضف مهمة من الأعلى.',
       inProgress: 'قيد العمل', pinned: 'مثبتة', noPinned: 'ثبّت ملاحظة لتظهر في هذه الصفحة.',
       todo: 'للعمل', doing: 'قيد العمل', done: 'منجزة',
       low: 'منخفضة', normal: 'عادية', high: 'عالية',
@@ -70,6 +73,9 @@
       prevMonth: 'الشهر السابق', nextMonth: 'الشهر التالي', thisMonth: 'هذا الشهر', more: '+{n} أخرى',
       addOn: 'مهمة جديدة يوم {d}', updated: 'آخر تعديل {d}', backToDesks: 'كل المكاتب', taskCount: '{n} مهام',
       shortcut: 'اضغط N لمهمة جديدة', noteWord: 'ملاحظات', openWord: 'مفتوحة',
+      noDeadline: 'بدون موعد', showAll: 'عرض الكل ({n})', checklist: 'الخطوات', addStep: 'أضف خطوة واضغط Enter',
+      removeStep: 'حذف الخطوة', undo: 'تراجع', markedDone: 'تم الإنجاز', taskDeleted: 'تم حذف المهمة', noteDeleted: 'تم حذف الملاحظة',
+      noDate: 'بدون موعد', nextWeek: 'الأسبوع القادم', pickDate: 'اختر تاريخًا',
     },
   };
 
@@ -86,7 +92,8 @@
   const now = new Date();
   const state = {
     data: { desks: [], tasks: [], notes: [] },
-    lang: store.get('lang') === 'ar' ? 'ar' : 'en',
+    lang: (store.get('lang') || (navigator.language || '').slice(0, 2)) === 'ar' ? 'ar' : 'en',
+    quick: { title: '', deskId: store.get('quickDesk') || '', due: '' },
     route: { view: 'today', id: null },
     filters: { q: '', desk: '', status: 'open', sort: 'due', noteQ: '', noteDesk: '' },
     month: [now.getFullYear(), now.getMonth()],
@@ -231,9 +238,40 @@
     return `<button class="check" data-act="toggle" data-id="${esc(t.id)}" aria-pressed="${done}" aria-label="${esc(done ? tr('markOpen') : tr('markDone'))}">${done ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</button>`;
   }
 
+  function stepsPill(t) {
+    const steps = t.checklist || [];
+    if (!steps.length) return '';
+    const done = steps.filter((x) => x.done).length;
+    return `<span class="pill steps ${done === steps.length ? 'is-full' : ''}">${icon('tasks')}${done}/${steps.length}</span>`;
+  }
+
+  // One-tap deadline buttons that fill the date field with id `forId`.
+  function dueChips(current, forId) {
+    const today = todayYmd();
+    const choices = [['', tr('noDate')], [today, tr('dueTodayShort')], [addDays(today, 1), tr('tomorrow')], [addDays(today, 7), tr('nextWeek')]];
+    return `<div class="chips" data-for="${forId}" role="group" aria-label="${esc(tr('due'))}">${choices.map(([value, label]) =>
+      `<button type="button" class="chip-btn ${value === (current || '') ? 'is-on' : ''}" data-act="set-due" data-value="${value}">${label}</button>`).join('')}
+      <input type="date" id="${forId}" name="due" value="${esc(current || '')}" class="date-mini" aria-label="${esc(tr('pickDate'))}" title="${esc(tr('pickDate'))}"></div>`;
+  }
+
+  function syncChips(input) {
+    const group = input.closest('.chips');
+    if (group) group.querySelectorAll('.chip-btn').forEach((b) => b.classList.toggle('is-on', b.dataset.value === input.value));
+  }
+
+  const segmented = (name, values, current) =>
+    `<div class="seg-radio" role="radiogroup">${values.map((v) => `<label class="seg-opt v-${v}"><input type="radio" name="${name}" value="${v}" ${v === current ? 'checked' : ''}><span>${tr(v)}</span></label>`).join('')}</div>`;
+
+  const stepRow = (step) => `<li class="step">
+    <input type="checkbox" class="step-done" ${step.done ? 'checked' : ''} aria-label="${esc(tr('markDone'))}">
+    <input class="step-text" value="${esc(step.text)}" maxlength="200" dir="auto" aria-label="${esc(tr('checklist'))}">
+    <button type="button" class="icon-btn" data-act="step-remove" aria-label="${esc(tr('removeStep'))}">${icon('close')}</button>
+  </li>`;
+
   function taskRow(t, { showDesk = true } = {}) {
     const meta = [
       showDesk ? deskChip(deskById(t.deskId)) : '',
+      stepsPill(t),
       t.status === 'doing' ? `<span class="pill doing">${tr('doing')}</span>` : '',
       t.priority === 'high' && isOpen(t) ? `<span class="pill high">${tr('high')}</span>` : '',
     ].join('');
@@ -318,7 +356,8 @@
         <button class="foot-btn" data-act="export">${icon('download')}<span>${tr('exportData')}</span></button>
         <button class="foot-btn" data-act="import">${icon('upload')}<span>${tr('importData')}</span></button>
         ${document.body.dataset.auth === '1' ? `<button class="foot-btn" data-act="logout">${icon('logout')}<span>${tr('signOut')}</span></button>` : ''}
-      </div>`;
+      </div>
+      <button class="fab" data-act="new-task" aria-label="${esc(tr('newTask'))}">${icon('plus')}</button>`;
   }
 
   /* ---------- Views ---------- */
@@ -330,14 +369,17 @@
     const open = state.data.tasks.filter(isOpen).sort(byDeadline);
     const groups = { overdue: [], today: [], week: [] };
     open.forEach((t) => { const b = bucket(t, today); if (groups[b]) groups[b].push(t); });
-    const doing = open.filter((t) => t.status === 'doing' && !['overdue', 'today'].includes(bucket(t, today)));
+    const doing = open.filter((t) => t.status === 'doing' && !['overdue', 'today', 'week'].includes(bucket(t, today)));
+    const noDate = open.filter((t) => !t.due && t.status !== 'doing');
+    const later = open.filter((t) => bucket(t, today) === 'later' && t.status !== 'doing');
     const weekAgo = Date.now() - 7 * 86400000;
     const doneWeek = state.data.tasks.filter((t) => !isOpen(t) && t.doneAt && Date.parse(t.doneAt) >= weekAgo).length;
     const pinned = state.data.notes.filter((n) => n.pinned).sort((a, b) => b.updated.localeCompare(a.updated));
 
     const stat = (cls, label, value) => `<div class="stat ${cls} ${value ? '' : 'is-zero'}"><span class="stat-value">${value}</span><span class="stat-label">${label}</span></div>`;
-    const section = (title, cls, tasks) => tasks.length
-      ? `<section class="group ${cls}"><h3>${title}<span class="group-count">${tasks.length}</span></h3>${taskList(tasks)}</section>` : '';
+    const section = (title, cls, tasks, limit = 0) => tasks.length
+      ? `<section class="group ${cls}"><h3>${title}<span class="group-count">${tasks.length}</span></h3>${taskList(limit ? tasks.slice(0, limit) : tasks)}
+        ${limit && tasks.length > limit ? `<a class="show-all" href="#tasks">${tr('showAll', { n: tasks.length })}</a>` : ''}</section>` : '';
 
     return `
       ${pageHead(esc(fmtLong(today)), esc(greeting), newTaskButton(`data-due="${today}"`))}
@@ -348,10 +390,14 @@
         ${stat('is-done', tr('done7'), doneWeek)}
       </div>
       <form class="quick-add" id="quick-add" autocomplete="off">
-        <input id="quick-title" name="title" placeholder="${esc(tr('quickAdd'))}" aria-label="${esc(tr('quickAdd'))}" maxlength="200" dir="auto" required>
-        <select id="quick-desk" name="deskId" aria-label="${esc(tr('desk'))}">${deskOptions(store.get('quickDesk') || '')}</select>
-        <input id="quick-due" name="due" type="date" value="${today}" aria-label="${esc(tr('due'))}">
-        <button class="btn primary">${tr('add')}</button>
+        <div class="qa-main">
+          <input id="quick-title" name="title" value="${esc(state.quick.title)}" data-quick="title" placeholder="${esc(tr('quickAdd'))}" aria-label="${esc(tr('quickAdd'))}" maxlength="200" dir="auto" required>
+          <button class="btn primary">${icon('plus')}<span>${tr('add')}</span></button>
+        </div>
+        <div class="qa-opts">
+          <select id="quick-desk" name="deskId" data-quick="deskId" aria-label="${esc(tr('desk'))}">${deskOptions(state.quick.deskId)}</select>
+          ${dueChips(state.quick.due, 'quick-due')}
+        </div>
       </form>
       <div class="today-grid">
         <div class="panel">
@@ -360,7 +406,9 @@
           ${section(tr('dueToday'), 'is-today', groups.today)}
           ${section(tr('comingUp'), 'is-soon', groups.week)}
           ${section(tr('inProgress'), 'is-doing', doing)}
-          ${groups.overdue.length + groups.today.length + groups.week.length + doing.length ? '' : `<p class="empty">${tr('allClear')}</p>`}
+          ${section(tr('noDeadline'), 'is-nodate', noDate, 8)}
+          ${section(tr('later'), 'is-later', later, 5)}
+          ${open.length ? '' : `<p class="empty">${tr('allClear')}</p>`}
         </div>
         <div class="today-side">
           <div class="panel">
@@ -423,7 +471,7 @@
         <ul class="cards">${list.map((t) => `<li class="card ${isOpen(t) ? '' : 'is-done'} ${t.priority === 'high' && isOpen(t) ? 'is-high' : ''}" draggable="true" data-drag="${esc(t.id)}">
           ${checkButton(t)}
           <button class="task-open" data-act="edit-task" data-id="${esc(t.id)}"><span class="task-title" dir="auto">${esc(t.title)}</span>
-          ${t.notes ? `<span class="card-notes" dir="auto">${esc(t.notes.slice(0, 120))}</span>` : ''}</button>
+          ${t.notes ? `<span class="card-notes" dir="auto">${esc(t.notes.slice(0, 120))}</span>` : ''}${stepsPill(t)}</button>
           ${dueBadge(t)}
         </li>`).join('') || `<li class="column-empty">${tr('dropHere')}</li>`}</ul>
       </section>`;
@@ -587,15 +635,17 @@
   function taskModal(t) {
     openModal(modalFrame('tasks', tr(t.id ? 'editTask' : 'newTask'), `
       <label class="field"><span>${tr('title')}</span><input name="title" maxlength="200" value="${esc(t.title || '')}" dir="auto" required autofocus></label>
+      <label class="field"><span>${tr('desk')}</span><select name="deskId">${deskOptions(t.deskId || '')}</select></label>
+      <div class="field"><span>${tr('due')}</span>${dueChips(t.due, 'task-due')}</div>
       <div class="row">
-        <label class="field"><span>${tr('desk')}</span><select name="deskId">${deskOptions(t.deskId || '')}</select></label>
-        <label class="field"><span>${tr('due')}</span><input type="date" name="due" value="${esc(t.due || '')}"></label>
+        <div class="field"><span>${tr('status')}</span>${segmented('status', STATUSES, t.status || 'todo')}</div>
+        <div class="field"><span>${tr('priority')}</span>${segmented('priority', PRIORITIES, t.priority || 'normal')}</div>
       </div>
-      <div class="row">
-        <label class="field"><span>${tr('status')}</span><select name="status">${options(STATUSES, t.status || 'todo')}</select></label>
-        <label class="field"><span>${tr('priority')}</span><select name="priority">${options(PRIORITIES, t.priority || 'normal')}</select></label>
+      <div class="field"><span>${tr('checklist')}</span>
+        <ul class="step-list" id="steps">${(t.checklist || []).map(stepRow).join('')}</ul>
+        <input id="step-new" class="step-new" placeholder="${esc(tr('addStep'))}" maxlength="200" dir="auto" aria-label="${esc(tr('addStep'))}">
       </div>
-      <label class="field"><span>${tr('details')}</span><textarea name="notes" rows="5" maxlength="5000" dir="auto">${esc(t.notes || '')}</textarea></label>`, t.id));
+      <label class="field"><span>${tr('details')}</span><textarea name="notes" rows="4" maxlength="5000" dir="auto">${esc(t.notes || '')}</textarea></label>`, t.id));
   }
 
   function deskModal(d) {
@@ -636,9 +686,23 @@
       case 'edit-task': { const t = taskById(id); if (t) taskModal(t); break; }
       case 'toggle': {
         const t = taskById(id);
-        if (t) await saveItem('tasks', { ...t, status: isOpen(t) ? 'done' : 'todo' }, '').catch(() => {});
+        if (!t) break;
+        const before = { ...t };
+        try {
+          await saveItem('tasks', { ...t, status: isOpen(t) ? 'done' : 'todo' }, '');
+          if (isOpen(before)) toast(tr('markedDone'), false, () => saveItem('tasks', before, ''));
+        } catch { /* toast already shown */ }
         break;
       }
+      case 'set-due': {
+        const input = document.getElementById(el.closest('.chips').dataset.for);
+        input.value = el.dataset.value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        // In the quick add bar, go back to the text so Enter adds the task.
+        if (el.closest('#quick-add')) $('#quick-title').focus();
+        break;
+      }
+      case 'step-remove': el.closest('.step').remove(); break;
       case 'new-desk': deskModal({}); break;
       case 'edit-desk': { const d = deskById(id); if (d) deskModal(d); break; }
       case 'new-note': noteModal({ deskId: el.dataset.desk || '' }); break;
@@ -647,15 +711,16 @@
       case 'close': modal.close(); break;
       case 'delete': {
         const type = el.dataset.type;
-        let question = tr(type === 'tasks' ? 'confirmTask' : 'confirmNote');
+        // Tasks and notes go straight away with an Undo; a desk takes its tasks with it, so ask first.
         if (type === 'desks') {
           const s = deskStats(id);
-          question = tr('confirmDesk', { name: deskById(id)?.name, tasks: s.total, notes: s.notes });
+          if (!confirm(tr('confirmDesk', { name: deskById(id)?.name, tasks: s.total, notes: s.notes }))) break;
         }
-        if (!confirm(question)) break;
+        const copy = type === 'tasks' ? taskById(id) : type === 'notes' ? noteById(id) : null;
         try {
-          await change({ action: 'delete', type, id }, tr('deleted'));
+          await change({ action: 'delete', type, id }, copy ? '' : tr('deleted'));
           modal.close();
+          if (copy) toast(tr(type === 'tasks' ? 'taskDeleted' : 'noteDeleted'), false, () => saveItem(type, { ...copy, id: '' }, ''));
           if (type === 'desks' && state.route.id === id) location.hash = '#desks';
         } catch { /* toast already shown */ }
         break;
@@ -682,12 +747,19 @@
     const form = e.target;
     if (form.id === 'quick-add') {
       e.preventDefault();
-      const item = Object.fromEntries(new FormData(form));
+      const item = { ...state.quick };
       if (!item.title.trim()) return;
       store.set('quickDesk', item.deskId);
-      await saveItem('tasks', { ...item, status: 'todo', priority: 'normal' }).catch(() => {});
+      state.quick.title = '';
+      state.quick.due = '';
+      try {
+        await saveItem('tasks', { ...item, status: 'todo', priority: 'normal' });
+      } catch {
+        state.quick.title = item.title;
+        render();
+      }
       const title = $('#quick-title');
-      if (title) { title.value = ''; title.focus(); }
+      if (title) title.focus();
       return;
     }
     if (!form.dataset.form) return;
@@ -695,6 +767,13 @@
     const type = form.dataset.form;
     const item = Object.fromEntries(new FormData(form));
     if (type === 'notes') item.pinned = form.elements.pinned.checked;
+    if (type === 'tasks') {
+      const pending = form.querySelector('#step-new').value.trim();
+      item.checklist = [...form.querySelectorAll('.step')]
+        .map((li) => ({ text: li.querySelector('.step-text').value.trim(), done: li.querySelector('.step-done').checked }))
+        .concat(pending ? [{ text: pending, done: false }] : [])
+        .filter((step) => step.text);
+    }
     const required = form.querySelector('[required]');
     if (required && !required.value.trim()) { required.focus(); required.reportValidity(); return; }
     try {
@@ -705,10 +784,25 @@
   });
 
   document.addEventListener('input', (e) => {
-    const key = e.target.dataset && e.target.dataset.filter;
-    if (!key) return;
-    state.filters[key] = e.target.value;
-    render();
+    const el = e.target;
+    if (el.type === 'date') syncChips(el);
+    if (el.dataset.quick) { state.quick[el.dataset.quick] = el.value; return; }
+    if (el.dataset.filter) { state.filters[el.dataset.filter] = el.value; render(); }
+  });
+
+  // Enter in the steps list adds a step instead of saving the task.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.isComposing) return;
+    if (e.target.id === 'step-new') {
+      e.preventDefault();
+      const text = e.target.value.trim();
+      if (!text) return;
+      $('#steps').insertAdjacentHTML('beforeend', stepRow({ text, done: false }));
+      e.target.value = '';
+    } else if (e.target.classList.contains('step-text')) {
+      e.preventDefault();
+      $('#step-new').focus();
+    }
   });
 
   // Dialog closes when clicking the dark backdrop around it.
@@ -717,7 +811,7 @@
   // N opens a new task, unless you are typing somewhere.
   document.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() !== 'n' || e.ctrlKey || e.metaKey || e.altKey || modal.open) return;
-    if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+    if (e.target.closest('input, textarea, select, button, [contenteditable]')) return;
     e.preventDefault();
     taskModal({ deskId: state.route.view === 'desk' ? state.route.id : '', due: '', status: 'todo' });
   });
@@ -775,12 +869,14 @@
   /* ---------- Toast ---------- */
 
   let toastTimer;
-  function toast(message, isError = false) {
+  function toast(message, isError = false, undo = null) {
     const el = $('#toast');
-    el.textContent = message;
-    el.className = `toast is-shown ${isError ? 'is-error' : ''}`;
+    el.innerHTML = `<span>${esc(message)}</span>${undo ? `<button type="button" class="toast-undo">${tr('undo')}</button>` : ''}`;
+    el.className = `toast is-shown ${isError ? 'is-error' : ''} ${undo ? 'has-action' : ''}`;
+    const hide = () => { el.className = 'toast'; };
+    if (undo) el.querySelector('.toast-undo').addEventListener('click', () => { hide(); undo().catch(() => {}); });
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.className = 'toast'; }, isError ? 6000 : 2200);
+    toastTimer = setTimeout(hide, isError ? 6000 : undo ? 6000 : 2200);
   }
 
   /* ---------- Start ---------- */

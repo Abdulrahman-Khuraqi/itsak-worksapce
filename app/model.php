@@ -18,6 +18,19 @@ function clip($value, int $max): string
     return preg_match('/^.{0,' . $max . '}/su', $text, $m) === 1 ? $m[0] : '';
 }
 
+// Steps inside a task: [{"text": "…", "done": false}], up to 50.
+function clean_checklist($value): array
+{
+    $steps = [];
+    foreach (is_array($value) ? array_slice(array_values($value), 0, 50) : [] as $row) {
+        $text = is_array($row) ? clip($row['text'] ?? '', 200) : '';
+        if ($text !== '') {
+            $steps[] = ['text' => $text, 'done' => ($row['done'] ?? false) === true];
+        }
+    }
+    return $steps;
+}
+
 function clean_date($value): ?string
 {
     if (!is_string($value) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m)) {
@@ -93,6 +106,7 @@ function clean_item(string $type, array $in, ?array $old, array $deskIds, bool $
                 'priority' => pick($in['priority'] ?? null, TASK_PRIORITIES, 'normal'),
                 'due' => clean_date($in['due'] ?? null),
                 'notes' => clip($in['notes'] ?? '', 5000),
+                'checklist' => clean_checklist($in['checklist'] ?? []),
                 'doneAt' => $doneAt,
             ];
             if ($item['title'] === '') {
