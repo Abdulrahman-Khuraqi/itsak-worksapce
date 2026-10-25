@@ -1,0 +1,46 @@
+# Uploads the workspace to Hostinger (ws.brxel.co) on every push to site-dev.
+# Needs the repository secrets FTP_SERVER, FTP_USERNAME and FTP_PASSWORD.
+# The target folder defaults to public_html/ws/; to change it, add a repository
+# variable FTP_DIR (Settings > Secrets and variables > Actions > Variables).
+#
+# Only files from this repo are uploaded or removed. data/workspace.json, data/backups
+# and config.local.php live only on the server and are never touched.
+
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [site-dev]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PHP syntax
+        run: for f in *.php lib/*.php; do php -l "$f"; done
+
+      - name: Upload over FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ vars.FTP_DIR || 'public_html/ws/' }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            data/workspace.json*
+            data/backups/**
+            data/.lock
+            config.local.php
+            start workspace.bat
+            start.sh
+            router.php

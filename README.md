@@ -28,6 +28,15 @@ Other things:
 - **Keyboard:** press `N` anywhere to add a task.
 - **Export backup** downloads everything as one JSON file. **Import backup** puts it back (and keeps a copy of what was there).
 
+## Live site: ws.brxel.co
+
+Every push to the `site-dev` branch uploads the workspace to Hostinger automatically (`.github/workflows/deploy.yml`).
+
+- Needs three repository secrets: `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` (Settings → Secrets and variables → Actions).
+- Uploads to `public_html/ws/` on the FTP account. If the subdomain uses another folder, add a repository **variable** `FTP_DIR` with that path (ending in `/`).
+- Run it by hand from the **Actions** tab → *Deploy to Hostinger* → **Run workflow**.
+- Your data on the server (`data/workspace.json`, `data/backups/`) and `config.local.php` are never uploaded or deleted by a deploy.
+
 ## Where the data lives
 
 ```

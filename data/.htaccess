@@ -1,3 +1,8 @@
-# Keep the JSON data private on Apache hosts.
-Require all denied
-Deny from all
+# Keep this folder private (Apache and LiteSpeed, e.g. Hostinger).
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
