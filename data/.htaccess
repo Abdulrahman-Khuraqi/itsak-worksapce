@@ -1,0 +1,3 @@
+# Keep the JSON data private on Apache hosts.
+Require all denied
+Deny from all

@@ -1,0 +1,8 @@
+# Your data stays on your computer or server, not in git.
+data/workspace.json
+data/workspace.json.tmp
+data/.lock
+data/backups/
+config.local.php
+.DS_Store
+Thumbs.db

@@ -1,0 +1,83 @@
+# Itsak Workspace
+
+A small personal workspace for organising work: **desks** (one per client, project or area), **tasks with deadlines**, and **notes & info**. Built with plain PHP and one JSON file. There's no database and no build step.
+
+## Run it
+
+You need PHP 8.1 or newer.
+
+- **Windows:** double-click `start workspace.bat`. It opens http://localhost:8080.
+- **Mac / Linux:** run `./start.sh`, then open http://localhost:8080.
+- **On a server (Apache, shared hosting):** upload the folder. `data/` and `lib/` are blocked by their `.htaccess` files. Set a password first (see below).
+
+The first time it opens it creates `data/workspace.json` with some starter desks, tasks and notes. Edit or delete them.
+
+## What's inside
+
+| Page | What it shows |
+|---|---|
+| **Today** | Overdue, due today, next 7 days, in progress. Quick add bar. Desk progress. Pinned notes. |
+| **Desks** | One card per desk with open tasks, overdue count and next deadline. Open a desk for its To do / Doing / Done board (drag cards between columns) and its notes. |
+| **Tasks** | Every task, with search and filters by desk and status. |
+| **Calendar** | Month view of deadlines. Click a day number to add a task on that day. |
+| **Notes & info** | Links, contacts, ideas, meeting notes. Links become clickable. Pin a note to show it on Today. |
+
+Other things:
+
+- **English / العربية:** the switch at the bottom of the sidebar. The Arabic view is fully right to left.
+- **Keyboard:** press `N` anywhere to add a task.
+- **Export backup** downloads everything as one JSON file. **Import backup** puts it back (and keeps a copy of what was there).
+
+## Where the data lives
+
+```
+data/workspace.json           everything: desks, tasks, notes
+data/backups/workspace-YYYY-MM-DD.json   automatic copy once a day, before the first change (last 30 kept)
+```
+
+The JSON is readable and safe to edit by hand while the app is closed. `data/workspace.json` and the backups are **not** committed to git (see `.gitignore`), so your data stays on your machine or server.
+
+Shape of the file:
+
+```json
+{
+  "desks": [{ "id": "d_…", "name": "AZ TV Store", "color": "orange", "description": "…" }],
+  "tasks": [{ "id": "t_…", "deskId": "d_…", "title": "…", "status": "todo|doing|done",
+              "priority": "low|normal|high", "due": "2026-10-30", "notes": "…", "doneAt": null }],
+  "notes": [{ "id": "n_…", "deskId": "d_…", "title": "…", "body": "…", "pinned": true }]
+}
+```
+
+Every record also has `created` and `updated` timestamps.
+
+## Password
+
+With no password anyone who can open the page can use it, which is fine on your own computer. Before putting it online, create `config.local.php` next to `config.php`:
+
+```php
+<?php
+define('APP_PASSWORD', 'choose-a-long-password');
+```
+
+`config.local.php` is ignored by git. The timezone for timestamps and backup names is set in `config.php` (`Asia/Riyadh`).
+
+## Brand
+
+- Main colour black. Primary purple `#662d8b`, secondary orange `#ff9a1c`, accent red `#ff0000`, neutrals Tailwind zinc. All are defined as CSS variables at the top of `assets/css/app.css`.
+- Fonts: Nexa (English headings) and Graphik Arabic (Arabic and body). See `assets/fonts/README.md` for the file names to drop in.
+- Logos are in `assets/img/`. `logo-full-white.svg` and `logo-icon-white.svg` are white versions of the supplied logos for the black background.
+
+## Files
+
+```
+index.php            the page (and the sign-in form when a password is set)
+api.php              JSON API the page talks to
+config.php           settings
+router.php           used by the start scripts; blocks data/ and lib/ on PHP's built-in server
+lib/model.php        record shapes and input cleaning
+lib/store.php        reading/writing the JSON with a file lock, daily backups
+lib/seed.php         starter content for the first run
+lib/auth.php         optional password
+assets/js/app.js     the interface (plain JavaScript)
+assets/css/app.css   styles and brand colours
+```
