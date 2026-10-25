@@ -8,8 +8,8 @@ declare(strict_types=1);
 //   POST {"action":"import", "data":{…}}                -> replace everything with a backup file
 // Every successful call answers {"ok":true,"data":{…}} so the page always shows what is on disk.
 
-require __DIR__ . '/lib/auth.php';
-require __DIR__ . '/lib/store.php';
+require __DIR__ . '/app/auth.php';
+require __DIR__ . '/app/store.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');

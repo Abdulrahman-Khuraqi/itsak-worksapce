@@ -8,7 +8,7 @@ You need PHP 8.1 or newer.
 
 - **Windows:** double-click `start workspace.bat`. It opens http://localhost:8080.
 - **Mac / Linux:** run `./start.sh`, then open http://localhost:8080.
-- **On a server (Apache, shared hosting):** upload the folder. `data/` and `lib/` are blocked by their `.htaccess` files. Set a password first (see below).
+- **On a server (Apache, shared hosting):** upload the folder. `data/` and `app/` are blocked by their `.htaccess` files. Set a password first (see below).
 
 The first time it opens it creates `data/workspace.json` with some starter desks, tasks and notes. Edit or delete them.
 
@@ -82,11 +82,11 @@ define('APP_PASSWORD', 'choose-a-long-password');
 index.php            the page (and the sign-in form when a password is set)
 api.php              JSON API the page talks to
 config.php           settings
-router.php           used by the start scripts; blocks data/ and lib/ on PHP's built-in server
-lib/model.php        record shapes and input cleaning
-lib/store.php        reading/writing the JSON with a file lock, daily backups
-lib/seed.php         starter content for the first run
-lib/auth.php         optional password
+router.php           used by the start scripts; blocks data/ and app/ on PHP's built-in server
+app/model.php        record shapes and input cleaning
+app/store.php        reading/writing the JSON with a file lock, daily backups
+app/seed.php         starter content for the first run
+app/auth.php         optional password
 assets/js/app.js     the interface (plain JavaScript)
 assets/css/app.css   styles and brand colours
 ```
