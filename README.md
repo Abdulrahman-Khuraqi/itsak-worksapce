@@ -22,6 +22,10 @@ The first time it opens it creates `data/workspace.json` with some starter desks
 | **Calendar** | Month view of deadlines. Click a day number to add a task on that day. |
 | **Notes & info** | Links, contacts, ideas, meeting notes. Links become clickable. Pin a note to show it on Today. |
 
+On a phone it works like an app: a tab bar at the bottom (Today, Desks, **+** new task, Tasks, Notes), the calendar and a **⋯** menu (language, backup, sign out) at the top, and edit windows that slide up from the bottom. Buttons are finger-sized (44px) and fields use 16px text so the phone does not zoom in.
+
+**Install it on your phone:** open the site, then *Share → Add to Home Screen* (iPhone) or *⋮ → Add to Home screen / Install app* (Android). It opens full screen with the Itsak icon.
+
 Other things:
 
 - **English / العربية:** the switch at the bottom of the sidebar. The Arabic view is fully right to left.
@@ -29,7 +33,7 @@ Other things:
 - **Steps:** break a task into a checklist inside the task window; rows show progress like `2/5`.
 - **Undo:** completing or deleting a task (or deleting a note) shows an Undo button for a few seconds.
 - **Quick deadlines:** No date / Today / Tomorrow / Next week buttons when adding or editing a task.
-- **Keyboard:** press `N` anywhere to add a task. On phones, use the round + button.
+- **Keyboard:** press `N` anywhere to add a task. On phones, use the + in the tab bar.
 - **Export backup** downloads everything as one JSON file. **Import backup** puts it back (and keeps a copy of what was there).
 
 ## Live site: ws.brxel.co

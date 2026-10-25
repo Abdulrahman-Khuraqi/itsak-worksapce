@@ -21,6 +21,7 @@
       name: 'Name', color: 'Colour', description: 'Description', body: 'Text', pin: 'Pin to Today',
       save: 'Save', cancel: 'Cancel', close: 'Close', delete: 'Delete', edit: 'Edit',
       noDesk: 'No desk', allDesks: 'All desks', search: 'Search',
+      notesShort: 'Notes', moreMenu: 'More', mainNav: 'Main', dueCount: '{n} due',
       open: 'Open', all: 'All', sortDue: 'By deadline', sortNew: 'Newest first', sortMine: 'My order',
       dragToMove: 'Drag to change the order (or use the arrow keys)', sortHint: 'Drag ⋮⋮ to change the order',
       markDone: 'Mark as done', markOpen: 'Mark as not done',
@@ -57,6 +58,7 @@
       name: 'الاسم', color: 'اللون', description: 'الوصف', body: 'النص', pin: 'تثبيت في صفحة اليوم',
       save: 'حفظ', cancel: 'إلغاء', close: 'إغلاق', delete: 'حذف', edit: 'تعديل',
       noDesk: 'بدون مكتب', allDesks: 'كل المكاتب', search: 'بحث',
+      notesShort: 'الملاحظات', moreMenu: 'المزيد', mainNav: 'القائمة الرئيسية', dueCount: '{n} مستحقة',
       open: 'المفتوحة', all: 'الكل', sortDue: 'حسب الموعد', sortNew: 'الأحدث أولًا', sortMine: 'ترتيبي',
       dragToMove: 'اسحب لتغيير الترتيب (أو استخدم الأسهم)', sortHint: 'اسحب ⋮⋮ لتغيير الترتيب',
       markDone: 'تحديد كمنجزة', markOpen: 'إلغاء الإنجاز',
@@ -178,6 +180,7 @@
     chevron: '<path d="m9 6 6 6-6 6"/>',
     grip: '<circle cx="9" cy="6" r=".9"/><circle cx="15" cy="6" r=".9"/><circle cx="9" cy="12" r=".9"/><circle cx="15" cy="12" r=".9"/><circle cx="9" cy="18" r=".9"/><circle cx="15" cy="18" r=".9"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
   };
   const icon = (name, cls = '') =>
     `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name]}</svg>`;
@@ -306,8 +309,9 @@
     </header>`;
   }
 
+  // Phones use the + in the tab bar instead.
   const newTaskButton = (attrs = '') =>
-    `<button class="btn primary" data-act="new-task" ${attrs}>${icon('plus')}<span>${tr('newTask')}</span></button>`;
+    `<button class="btn primary hide-phone" data-act="new-task" ${attrs}>${icon('plus')}<span>${tr('newTask')}</span></button>`;
 
   const deskOptions = (selected, { any = false } = {}) =>
     (any ? `<option value="">${tr('allDesks')}</option>` : '') +
@@ -369,7 +373,42 @@
         <button class="foot-btn" data-act="import">${icon('upload')}<span>${tr('importData')}</span></button>
         ${document.body.dataset.auth === '1' ? `<button class="foot-btn" data-act="logout">${icon('logout')}<span>${tr('signOut')}</span></button>` : ''}
       </div>
-      <button class="fab" data-act="new-task" aria-label="${esc(tr('newTask'))}">${icon('plus')}</button>`;
+      <div class="phone-actions">
+        <a href="#calendar" class="top-btn ${current === 'calendar' ? 'is-active' : ''}" ${current === 'calendar' ? 'aria-current="page"' : ''} aria-label="${esc(tr('calendar'))}">${icon('calendar')}</a>
+        <button class="top-btn" data-act="more" aria-haspopup="dialog" aria-label="${esc(tr('moreMenu'))}">${icon('more')}</button>
+      </div>`;
+    renderTabbar(current, urgent);
+  }
+
+  // Phone navigation: four places and a big + in the middle, like an app.
+  function renderTabbar(current, urgent) {
+    const tab = (view, label, badge = 0) => `<a href="#${view}" class="tab ${current === view ? 'is-active' : ''}" ${current === view ? 'aria-current="page"' : ''}
+        aria-label="${esc(label + (badge ? ', ' + tr('dueCount', { n: badge }) : ''))}">
+        <span class="tab-icon">${icon(view)}${badge ? `<span class="tab-badge" aria-hidden="true">${badge > 99 ? '99+' : badge}</span>` : ''}</span>
+        <span class="tab-label" aria-hidden="true">${esc(label)}</span></a>`;
+    const bar = $('#tabbar');
+    bar.setAttribute('aria-label', tr('mainNav'));
+    bar.innerHTML = `
+      ${tab('today', tr('today'), urgent)}
+      ${tab('desks', tr('desks'))}
+      <button class="tab tab-add" data-act="new-task" aria-label="${esc(tr('newTask'))}"><span class="tab-add-circle">${icon('plus')}</span></button>
+      ${tab('tasks', tr('tasks'))}
+      ${tab('notes', tr('notesShort'))}`;
+  }
+
+  function moreSheet() {
+    const item = (act, name, label, attrs = '') =>
+      `<button type="button" class="sheet-item" data-act="${act}" ${attrs}>${icon(name)}<span>${label}</span></button>`;
+    openModal(`<div class="sheet">
+      <header class="modal-head"><h2>${tr('moreMenu')}</h2>
+        <button type="button" class="icon-btn" data-act="close" aria-label="${esc(tr('close'))}">${icon('close')}</button></header>
+      <div class="sheet-list">
+        ${item('lang', 'globe', tr('switchLang'), `lang="${state.lang === 'ar' ? 'en' : 'ar'}"`)}
+        ${item('export', 'download', tr('exportData'))}
+        ${item('import', 'upload', tr('importData'))}
+        ${document.body.dataset.auth === '1' ? item('logout', 'logout', tr('signOut')) : ''}
+      </div>
+    </div>`);
   }
 
   /* ---------- Views ---------- */
@@ -748,13 +787,15 @@
         render();
         break;
       }
+      case 'more': moreSheet(); break;
       case 'lang':
+        if (modal.open) modal.close();
         state.lang = state.lang === 'ar' ? 'en' : 'ar';
         store.set('lang', state.lang);
         render();
         break;
-      case 'export': exportData(); break;
-      case 'import': $('#import-file').click(); break;
+      case 'export': if (modal.open) modal.close(); exportData(); break;
+      case 'import': if (modal.open) modal.close(); $('#import-file').click(); break;
       case 'logout': $('#logout-form').submit(); break;
     }
   });
@@ -877,9 +918,11 @@
         else if (last !== drag.item && e.clientY > last.getBoundingClientRect().bottom) last.after(drag.item);
       }
     }
-    // Keep the page moving when dragging near the top or bottom edge.
-    if (e.clientY < 70) window.scrollBy(0, -12);
-    else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 12);
+    // Keep the page moving when dragging near the top or bottom edge (above the phone tab bar).
+    const bar = $('#tabbar').getBoundingClientRect();
+    const bottom = bar.height ? bar.top : window.innerHeight;
+    if (e.clientY < 90) window.scrollBy(0, -12);
+    else if (e.clientY > bottom - 60) window.scrollBy(0, 12);
   });
 
   function endDrag() {

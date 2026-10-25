@@ -34,6 +34,13 @@ $v = static fn (string $file) => $file . '?v=' . @filemtime(__DIR__ . '/' . $fil
 <meta name="theme-color" content="#000000">
 <title>Itsak Workspace</title>
 <link rel="icon" href="assets/img/logo-icon-primary.svg" type="image/svg+xml">
+<!-- Add to Home Screen: opens full screen like an app -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/img/app/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Workspace">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="<?= $v('assets/css/app.css') ?>">
 </head>
 <?php if (!auth_ok()): ?>
@@ -55,6 +62,7 @@ $v = static fn (string $file) => $file . '?v=' . @filemtime(__DIR__ . '/' . $fil
     <aside class="side" id="side"></aside>
     <main class="main" id="view" tabindex="-1"><p class="loading">…</p></main>
   </div>
+  <nav class="tabbar" id="tabbar"></nav>
   <dialog id="modal" class="modal"></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <form id="logout-form" method="post" hidden><input type="hidden" name="logout" value="1"></form>
