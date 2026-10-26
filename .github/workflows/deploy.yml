@@ -1,4 +1,4 @@
-# Uploads the workspace to Hostinger (ws.brxel.co) on every push to site-dev.
+# Uploads the workspace to Hostinger (ws.brxel.co) on every push to main or site-dev.
 # Needs the repository secrets FTP_USERNAME and FTP_PASSWORD
 # (Hostinger > Files > FTP Accounts; the account opens in .../brxel.co/public_html/ws).
 # The secret APP_PASSWORD, when set, is written to config.local.php as the workspace password.
@@ -13,7 +13,7 @@ name: Deploy to Hostinger
 
 on:
   push:
-    branches: [site-dev]
+    branches: [main, site-dev]
   workflow_dispatch:
 
 concurrency:

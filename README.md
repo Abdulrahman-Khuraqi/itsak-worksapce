@@ -39,7 +39,7 @@ Other things:
 
 ## Live site: ws.brxel.co
 
-Every push to the `site-dev` branch uploads the workspace to Hostinger automatically (`.github/workflows/deploy.yml`).
+Every push to the `main` or `site-dev` branch uploads the workspace to Hostinger automatically (`.github/workflows/deploy.yml`).
 
 - Needs two repository secrets: `FTP_USERNAME` and `FTP_PASSWORD` (Settings → Secrets and variables → Actions). The FTP server is `82.198.230.29`; to change it, add a repository **variable** `FTP_HOST`.
 - Uploads into the FTP account's own folder (`.../brxel.co/public_html/ws`). To use another folder, add a repository **variable** `FTP_DIR`.
