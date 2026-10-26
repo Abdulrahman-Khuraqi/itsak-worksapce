@@ -8,7 +8,7 @@
 
   const I18N = {
     en: {
-      today: 'Today', desks: 'Desks', tasks: 'Tasks', calendar: 'Calendar', notes: 'Notes & info',
+      focus: 'Focus', today: 'Today', desks: 'Desks', tasks: 'Tasks', calendar: 'Calendar', notes: 'Notes & info',
       newTask: 'New task', editTask: 'Edit task', newDesk: 'New desk', editDesk: 'Edit desk', newNote: 'New note', editNote: 'Edit note',
       morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening',
       overdue: 'Overdue', dueToday: 'Due today', next7: 'Next 7 days', done7: 'Done, last 7 days',
@@ -43,9 +43,12 @@
       noDeadline: 'No deadline', showAll: 'Show all {n}', checklist: 'Steps', addStep: 'Add a step and press Enter',
       removeStep: 'Remove step', undo: 'Undo', markedDone: 'Marked as done', taskDeleted: 'Task deleted', noteDeleted: 'Note deleted',
       noDate: 'No date', nextWeek: 'Next week', pickDate: 'Pick a date',
+      focusNow: 'Work on this now', focusNext: 'Next', focusRest: 'After that', focusLeft: '{n} left for today', focusDone: '{n} done',
+      focusClear: 'Nothing left for today', focusClearSub: 'Enjoy the quiet, or pick something from your list.', seeTasks: 'See all tasks',
+      doneBtn: 'Done', doFirst: 'Do this first',
     },
     ar: {
-      today: 'اليوم', desks: 'المكاتب', tasks: 'المهام', calendar: 'التقويم', notes: 'ملاحظات ومعلومات',
+      focus: 'تركيز', today: 'اليوم', desks: 'المكاتب', tasks: 'المهام', calendar: 'التقويم', notes: 'ملاحظات ومعلومات',
       newTask: 'مهمة جديدة', editTask: 'تعديل المهمة', newDesk: 'مكتب جديد', editDesk: 'تعديل المكتب', newNote: 'ملاحظة جديدة', editNote: 'تعديل الملاحظة',
       morning: 'صباح الخير', afternoon: 'مساء الخير', evening: 'مساء الخير',
       overdue: 'متأخرة', dueToday: 'موعدها اليوم', next7: 'خلال 7 أيام', done7: 'أُنجزت آخر 7 أيام',
@@ -80,6 +83,9 @@
       noDeadline: 'بدون موعد', showAll: 'عرض الكل ({n})', checklist: 'الخطوات', addStep: 'أضف خطوة واضغط Enter',
       removeStep: 'حذف الخطوة', undo: 'تراجع', markedDone: 'تم الإنجاز', taskDeleted: 'تم حذف المهمة', noteDeleted: 'تم حذف الملاحظة',
       noDate: 'بدون موعد', nextWeek: 'الأسبوع القادم', pickDate: 'اختر تاريخًا',
+      focusNow: 'اشتغل على هذه الآن', focusNext: 'التالية', focusRest: 'بعد ذلك', focusLeft: 'متبقي لليوم: {n}', focusDone: 'أُنجز: {n}',
+      focusClear: 'لا شيء متبقٍ لليوم', focusClearSub: 'استمتع بالهدوء، أو اختر شيئًا من قائمتك.', seeTasks: 'عرض كل المهام',
+      doneBtn: 'تم', doFirst: 'ابدأ بهذه أولًا',
     },
   };
 
@@ -98,7 +104,7 @@
   const state = {
     data: { desks: [], tasks: [], notes: [] },
     lang: (store.get('lang') || (navigator.language || '').slice(0, 2)) === 'ar' ? 'ar' : 'en',
-    route: { view: 'today', id: null },
+    route: { view: 'focus', id: null },
     filters: { q: '', desk: '', status: 'open', sort: 'mine', noteQ: '', noteDesk: '' },
     month: [now.getFullYear(), now.getMonth()],
   };
@@ -163,9 +169,19 @@
     };
   }
 
+  // The day's work, in the order you set: overdue, due today and in progress. Waiting tasks are not yours to do yet.
+  function focusQueue(today = todayYmd()) {
+    return state.data.tasks
+      .filter((t) => isOpen(t) && t.status !== 'waiting' && (t.status === 'doing' || (t.due && t.due <= today)))
+      .sort(byOrder);
+  }
+
   /* ---------- Icons (24px stroke) ---------- */
 
   const ICON_PATHS = {
+    focus: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
     today: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     desks: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
     tasks: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/>',
@@ -247,9 +263,11 @@
     return `<time class="due ${cls}" datetime="${esc(t.due)}" title="${esc(fmtLong(t.due))}">${esc(text)}</time>`;
   }
 
+  const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
   function checkButton(t) {
     const done = !isOpen(t);
-    return `<button class="check" data-act="toggle" data-id="${esc(t.id)}" aria-pressed="${done}" aria-label="${esc(done ? tr('markOpen') : tr('markDone'))}">${done ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</button>`;
+    return `<button class="check" data-act="toggle" data-id="${esc(t.id)}" aria-pressed="${done}" aria-label="${esc(done ? tr('markOpen') : tr('markDone'))}">${done ? CHECK_SVG : ''}</button>`;
   }
 
   function stepsPill(t) {
@@ -350,6 +368,7 @@
     const open = state.data.tasks.filter(isOpen);
     const urgent = open.filter((t) => t.due && t.due <= today && t.status !== 'waiting').length;
     const nav = [
+      ['focus', focusQueue(today).length],
       ['today', urgent],
       ['desks', state.data.desks.length],
       ['tasks', open.length],
@@ -358,7 +377,7 @@
     ];
     const current = state.route.view === 'desk' ? 'desks' : state.route.view;
     $('#side').innerHTML = `
-      <a class="brand" href="#today" aria-label="Itsak.tech Workspace">
+      <a class="brand" href="#focus" aria-label="Itsak.tech Workspace">
         <img src="assets/img/logo-full-white.svg" alt="" width="148" height="40">
         <span class="brand-tag">Workspace</span>
       </a>
@@ -383,6 +402,7 @@
         ${document.body.dataset.auth === '1' ? `<button class="foot-btn" data-act="logout">${icon('logout')}<span>${tr('signOut')}</span></button>` : ''}
       </div>
       <div class="phone-actions">
+        <a href="#notes" class="top-btn ${current === 'notes' ? 'is-active' : ''}" ${current === 'notes' ? 'aria-current="page"' : ''} aria-label="${esc(tr('notes'))}">${icon('notes')}</a>
         <a href="#calendar" class="top-btn ${current === 'calendar' ? 'is-active' : ''}" ${current === 'calendar' ? 'aria-current="page"' : ''} aria-label="${esc(tr('calendar'))}">${icon('calendar')}</a>
         <button class="top-btn" data-act="more" aria-haspopup="dialog" aria-label="${esc(tr('moreMenu'))}">${icon('more')}</button>
       </div>`;
@@ -398,11 +418,11 @@
     const bar = $('#tabbar');
     bar.setAttribute('aria-label', tr('mainNav'));
     bar.innerHTML = `
+      ${tab('focus', tr('focus'))}
       ${tab('today', tr('today'), urgent)}
-      ${tab('desks', tr('desks'))}
       <button class="tab tab-add" data-act="new-task" aria-label="${esc(tr('newTask'))}"><span class="tab-add-circle">${icon('plus')}</span></button>
-      ${tab('tasks', tr('tasks'))}
-      ${tab('notes', tr('notesShort'))}`;
+      ${tab('desks', tr('desks'))}
+      ${tab('tasks', tr('tasks'))}`;
   }
 
   function moreSheet() {
@@ -421,6 +441,58 @@
   }
 
   /* ---------- Views ---------- */
+
+  // Home page: one task to work on, the next two, then the rest. Nothing else.
+  function viewFocus() {
+    const today = todayYmd();
+    const queue = focusQueue(today);
+    const [first, ...others] = queue;
+    const doneToday = state.data.tasks.filter((t) => !isOpen(t) && t.doneAt && Date.parse(t.doneAt) >= parseYmd(today).getTime()).length;
+    const summary = [queue.length ? tr('focusLeft', { n: queue.length }) : '', doneToday ? tr('focusDone', { n: doneToday }) : ''].filter(Boolean).join(' · ');
+
+    const meta = (t) => {
+      const bits = [dueBadge(t), deskChip(deskById(t.deskId)), t.status === 'doing' ? `<span class="pill doing">${tr('doing')}</span>` : '',
+        t.priority === 'high' ? `<span class="pill high">${tr('high')}</span>` : '', stepsPill(t)].join('');
+      return bits ? `<span class="task-meta">${bits}</span>` : '';
+    };
+    const row = (t, cls) => `<li class="task focus-row ${cls} ${t.priority === 'high' ? 'is-high' : ''}">
+      ${checkButton(t)}
+      <button class="task-open" data-act="edit-task" data-id="${esc(t.id)}"><span class="task-title" dir="auto">${esc(t.title)}</span>${cls === 'is-rest' ? '' : meta(t)}</button>
+      <button class="icon-btn do-first" data-act="do-first" data-id="${esc(t.id)}" aria-label="${esc(tr('doFirst'))}" title="${esc(tr('doFirst'))}">${icon('up')}</button>
+    </li>`;
+
+    const hero = (t) => {
+      const note = (t.notes || '').length > 280 ? t.notes.slice(0, 280) + '…' : t.notes || '';
+      const steps = (t.checklist || []).map((s, i) => `<li><button type="button" class="focus-step ${s.done ? 'is-done' : ''}" data-act="focus-step" data-id="${esc(t.id)}" data-i="${i}" aria-pressed="${!!s.done}">
+        <span class="check" aria-hidden="true">${s.done ? CHECK_SVG : ''}</span><span dir="auto">${esc(s.text)}</span></button></li>`).join('');
+      return `<section class="focus-hero ${t.priority === 'high' ? 'is-high' : ''}" aria-labelledby="focus-now">
+        <p class="focus-label" id="focus-now">${tr('focusNow')}</p>
+        <h2 class="focus-title" dir="auto">${esc(t.title)}</h2>
+        ${meta(t)}
+        ${note ? `<p class="focus-notes" dir="auto">${linkify(esc(note))}</p>` : ''}
+        ${steps ? `<ul class="focus-steps">${steps}</ul>` : ''}
+        <div class="focus-actions">
+          <button class="btn primary big" data-act="toggle" data-id="${esc(t.id)}">${icon('check')}<span>${tr('doneBtn')}</span></button>
+          <button class="btn ghost big" data-act="edit-task" data-id="${esc(t.id)}">${icon('edit')}<span>${tr('edit')}</span></button>
+        </div>
+      </section>`;
+    };
+    const list = (label, tasks, cls) => tasks.length
+      ? `<section class="focus-group"><h3 class="focus-label">${label}</h3><ul class="tasks">${tasks.map((t) => row(t, cls)).join('')}</ul></section>` : '';
+
+    return `<div class="focus">
+      ${pageHead(esc(fmtLong(today)), tr('focus'), newTaskButton(`data-due="${today}"`))}
+      ${summary ? `<p class="focus-sub">${esc(summary)}</p>` : ''}
+      ${first ? hero(first) : `<section class="focus-empty">
+        <span class="focus-empty-icon">${icon('check')}</span>
+        <h2>${tr('focusClear')}</h2>
+        <p>${tr('focusClearSub')}</p>
+        <a class="btn ghost big" href="#tasks">${tr('seeTasks')}</a>
+      </section>`}
+      ${list(tr('focusNext'), others.slice(0, 2), 'is-next')}
+      ${list(tr('focusRest'), others.slice(2), 'is-rest')}
+    </div>`;
+  }
 
   function viewToday() {
     const today = todayYmd();
@@ -637,7 +709,7 @@
       ${list.length ? `<div class="note-grid">${list.map(noteCard).join('')}</div>` : `<p class="empty big">${tr('noNotes')}</p>`}`;
   }
 
-  const VIEWS = { today: viewToday, desks: viewDesks, desk: () => viewDesk(state.route.id), tasks: viewTasks, calendar: viewCalendar, notes: viewNotes };
+  const VIEWS = { focus: viewFocus, today: viewToday, desks: viewDesks, desk: () => viewDesk(state.route.id), tasks: viewTasks, calendar: viewCalendar, notes: viewNotes };
 
   function render() {
     // Re-rendering replaces the page, so remember which field had focus and put the cursor back.
@@ -649,7 +721,7 @@
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
     renderSide();
-    const view = VIEWS[state.route.view] || viewToday;
+    const view = VIEWS[state.route.view] || viewFocus;
     $('#view').innerHTML = view();
     document.title = `${state.route.view === 'desk' && deskById(state.route.id) ? deskById(state.route.id).name : tr(state.route.view)} · Itsak Workspace`;
 
@@ -725,7 +797,7 @@
 
   function route() {
     const [view, id] = location.hash.replace(/^#/, '').split('/');
-    state.route = { view: VIEWS[view] ? view : 'today', id: id ? decodeURIComponent(id) : null };
+    state.route = { view: VIEWS[view] ? view : 'focus', id: id ? decodeURIComponent(id) : null };
     render();
     if (document.activeElement === document.body) $('#view').focus({ preventScroll: true });
     window.scrollTo(0, 0);
@@ -748,6 +820,19 @@
           await saveItem('tasks', { ...t, status: isOpen(t) ? 'done' : 'todo' }, '');
           if (isOpen(before)) toast(tr('markedDone'), false, () => saveItem('tasks', before, ''));
         } catch { /* toast already shown */ }
+        break;
+      }
+      case 'focus-step': {
+        const t = taskById(id);
+        const i = Number(el.dataset.i);
+        if (!t || !t.checklist || !t.checklist[i]) break;
+        const checklist = t.checklist.map((s, k) => (k === i ? { ...s, done: !s.done } : s));
+        await saveItem('tasks', { ...t, checklist }, '').catch(() => {});
+        break;
+      }
+      case 'do-first': {
+        const ids = [id, ...focusQueue().map((t) => t.id).filter((x) => x !== id)];
+        await change({ action: 'reorder', ids, id }, '').catch(() => {});
         break;
       }
       case 'set-due': {

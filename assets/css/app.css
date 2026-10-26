@@ -243,6 +243,61 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 .check[aria-pressed="true"] { background: var(--purple-500); border-color: var(--purple-500); }
 .check svg { width: 16px; height: 16px; }
 
+/* ---------- Focus (home) ---------- */
+
+/* One calm column: the task to work on now, the next two, then the rest. */
+.focus { max-width: 720px; margin-inline: auto; }
+.focus .page-head { margin-bottom: 14px; }
+.focus-sub { margin: 0 0 36px; color: var(--muted); font-size: 15px; }
+.focus-label {
+  margin: 0 0 14px; font: 700 12px/1 var(--head); letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+[dir="rtl"] .focus-label { letter-spacing: 0; font-size: 13px; }
+
+.focus-hero {
+  padding: 36px 36px 32px; border-radius: 22px; border: 1px solid var(--purple-700);
+  background: linear-gradient(155deg, var(--purple-900) 0%, var(--surface) 62%);
+}
+.focus-hero.is-high { box-shadow: inset 4px 0 0 var(--orange-500); }
+[dir="rtl"] .focus-hero.is-high { box-shadow: inset -4px 0 0 var(--orange-500); }
+.focus-hero .focus-label { color: var(--purple-300); }
+.focus-title { font-size: clamp(26px, 3.6vw, 36px); font-weight: 900; line-height: 1.3; overflow-wrap: anywhere; }
+.focus-hero .task-meta { margin-top: 18px; }
+.focus-notes { margin: 20px 0 0; color: var(--zinc-300); font-size: 16px; line-height: 1.7; white-space: pre-line; overflow-wrap: anywhere; }
+.focus-steps { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.focus-step {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 48px; padding: 6px 10px; margin-inline: -10px;
+  border: 0; border-radius: 12px; background: none; text-align: start; font-size: 16px; color: var(--zinc-100);
+}
+.focus-step:hover { background: rgba(255, 255, 255, .05); }
+.focus-step .check { pointer-events: none; }
+.focus-step[aria-pressed="true"] .check { background: var(--purple-500); border-color: var(--purple-500); }
+.focus-step.is-done > span:last-child { color: var(--faint); text-decoration: line-through; }
+.focus-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+.btn.big { height: 52px; padding: 0 28px; font-size: 16px; border-radius: 13px; }
+.btn.big .icon { width: 20px; height: 20px; stroke-width: 2.4; }
+.focus-hero .btn.primary { min-width: 168px; }
+
+.focus-group { margin-top: 44px; }
+.focus-row { padding-inline-end: 8px; }
+.focus-row.is-next { padding: 20px 18px 20px 22px; border-radius: 16px; gap: 16px; }
+[dir="rtl"] .focus-row.is-next { padding: 20px 22px 20px 18px; }
+.focus-row.is-next .task-title { font-size: 19px; line-height: 1.4; }
+.focus-row.is-next .check { width: 26px; height: 26px; border-radius: 50%; }
+.focus-row.is-rest { padding: 12px 8px 12px 18px; border-color: transparent; background: none; border-radius: 12px; gap: 14px; }
+[dir="rtl"] .focus-row.is-rest { padding: 12px 18px 12px 8px; }
+.focus-row.is-rest:hover { background: var(--surface); }
+.focus-row.is-rest .task-title { font-size: 15.5px; color: var(--zinc-300); }
+.focus-row.is-rest.is-high { box-shadow: none; }
+.do-first { opacity: .35; transition: opacity .15s; }
+.focus-row:hover .do-first, .do-first:focus-visible { opacity: 1; }
+
+.focus-empty { text-align: center; padding: 56px 24px; border: 1px dashed var(--line-strong); border-radius: 22px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.focus-empty-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--purple-800); color: var(--purple-200); margin-bottom: 8px; }
+.focus-empty-icon .icon { width: 30px; height: 30px; stroke-width: 2.2; }
+.focus-empty h2 { font-size: 24px; font-weight: 900; }
+.focus-empty p { margin: 0 0 12px; color: var(--muted); max-width: 36ch; }
+
 /* ---------- Today ---------- */
 
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
@@ -601,6 +656,19 @@ body.is-sorting, body.is-sorting * { cursor: grabbing !important; user-select: n
   .cal-task { font-size: 0; height: 5px; padding: 0; background: var(--dc); box-shadow: none; }
   .cal-task.is-done { opacity: .35; }
   .cal-more { display: none; }
+
+  .focus .page-head .actions { display: none; }
+  .focus-sub { margin-bottom: 26px; }
+  .focus-hero { padding: 26px 20px 22px; border-radius: 20px; }
+  .focus-step { min-height: 52px; }
+  .focus-actions { margin-top: 26px; }
+  .focus-actions .btn { flex: 1 1 100%; height: 54px; }
+  .focus-group { margin-top: 36px; }
+  .focus-row.is-next { padding: 16px 8px 16px 16px; }
+  [dir="rtl"] .focus-row.is-next { padding: 16px 16px 16px 8px; }
+  .focus-row.is-rest { padding-block: 8px; }
+  .do-first { opacity: .6; }
+  .phone-actions .top-btn { width: 42px; }
 
   /* Dialogs become bottom sheets */
   .modal {

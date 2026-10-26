@@ -2,7 +2,7 @@
   "name": "Itsak Workspace",
   "short_name": "Workspace",
   "description": "Desks, tasks, deadlines and notes.",
-  "start_url": "./#today",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
