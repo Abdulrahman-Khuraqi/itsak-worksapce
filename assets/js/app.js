@@ -472,7 +472,7 @@
         ${note ? `<p class="focus-notes" dir="auto">${linkify(esc(note))}</p>` : ''}
         ${steps ? `<ul class="focus-steps">${steps}</ul>` : ''}
         <div class="focus-actions">
-          <button class="btn primary big" data-act="toggle" data-id="${esc(t.id)}">${icon('check')}<span>${tr('doneBtn')}</span></button>
+          <button class="btn primary big focus-done" data-act="focus-done" data-id="${esc(t.id)}"><span class="done-ring" aria-hidden="true">${CHECK_SVG}</span><span>${tr('doneBtn')}</span></button>
           <button class="btn ghost big" data-act="edit-task" data-id="${esc(t.id)}">${icon('edit')}<span>${tr('edit')}</span></button>
         </div>
       </section>`;
@@ -803,6 +803,80 @@
     window.scrollTo(0, 0);
   }
 
+  async function toggleTask(id) {
+    const t = taskById(id);
+    if (!t) return;
+    const before = { ...t };
+    try {
+      await saveItem('tasks', { ...t, status: isOpen(t) ? 'done' : 'todo' }, '');
+      if (isOpen(before)) toast(tr('markedDone'), false, () => saveItem('tasks', before, ''));
+    } catch { /* toast already shown */ }
+  }
+
+  /* ---------- Finishing the Focus task: ring fills, confetti, a short chime ---------- */
+
+  let audio = null;
+  function chime() {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+      const now = audio.currentTime;
+      const out = audio.createGain();
+      out.gain.value = 0.18;
+      out.connect(audio.destination);
+      // A quick digital arpeggio up, with a soft square layer for the "tech" edge.
+      [[659.25, 0], [987.77, 0.07], [1318.5, 0.14], [1975.5, 0.24]].forEach(([freq, at], i, all) => {
+        const last = i === all.length - 1;
+        ['sine', 'square'].forEach((type) => {
+          const osc = audio.createOscillator();
+          const g = audio.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now + at);
+          if (last) osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + at + 0.35);
+          const peak = type === 'sine' ? 0.9 : 0.12;
+          const len = last ? 0.45 : 0.12;
+          g.gain.setValueAtTime(0.0001, now + at);
+          g.gain.exponentialRampToValueAtTime(peak, now + at + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + at + len);
+          osc.connect(g).connect(out);
+          osc.start(now + at);
+          osc.stop(now + at + len + 0.02);
+        });
+      });
+    } catch { /* no sound available: the animation is enough */ }
+  }
+
+  function celebrate(btn) {
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    btn.classList.add('is-celebrating');
+    btn.closest('.focus-hero')?.classList.add('is-celebrating');
+    chime();
+    if (!calm) {
+      // The confetti lives on <body> so it keeps flying while the page re-renders.
+      const ring = btn.querySelector('.done-ring').getBoundingClientRect();
+      const layer = document.createElement('div');
+      layer.className = 'confetti';
+      layer.setAttribute('aria-hidden', 'true');
+      layer.style.left = `${ring.left + ring.width / 2}px`;
+      layer.style.top = `${ring.top + ring.height / 2}px`;
+      const colors = ['var(--purple-300)', 'var(--purple-400)', 'var(--orange-500)', 'var(--orange-300)', '#fff'];
+      for (let i = 0; i < 36; i++) {
+        const bit = document.createElement('i');
+        const angle = (i / 36) * Math.PI * 2 + Math.random() * 0.4;
+        const dist = 70 + Math.random() * 120;
+        bit.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+        bit.style.setProperty('--dy', `${Math.sin(angle) * dist - 40}px`);
+        bit.style.setProperty('--rot', `${Math.random() * 720 - 360}deg`);
+        bit.style.background = colors[i % colors.length];
+        if (i % 3 === 0) bit.style.borderRadius = '50%';
+        layer.appendChild(bit);
+      }
+      document.body.appendChild(layer);
+      setTimeout(() => layer.remove(), 1400);
+    }
+    return new Promise((done) => setTimeout(done, calm ? 300 : 950));
+  }
+
   document.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-act]');
     if (!el) return;
@@ -812,14 +886,12 @@
         taskModal({ deskId: el.dataset.desk || (state.route.view === 'desk' ? state.route.id : ''), due: el.dataset.due || '', status: el.dataset.status || 'todo' });
         break;
       case 'edit-task': { const t = taskById(id); if (t) taskModal(t); break; }
-      case 'toggle': {
-        const t = taskById(id);
-        if (!t) break;
-        const before = { ...t };
-        try {
-          await saveItem('tasks', { ...t, status: isOpen(t) ? 'done' : 'todo' }, '');
-          if (isOpen(before)) toast(tr('markedDone'), false, () => saveItem('tasks', before, ''));
-        } catch { /* toast already shown */ }
+      case 'toggle': await toggleTask(id); break;
+      case 'focus-done': {
+        // The big Done on Focus: celebrate first, then mark it done and move on to the next task.
+        if (!taskById(id) || el.classList.contains('is-celebrating')) break;
+        await celebrate(el);
+        await toggleTask(id);
         break;
       }
       case 'focus-step': {

@@ -278,6 +278,37 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); curs
 .btn.big .icon { width: 20px; height: 20px; stroke-width: 2.4; }
 .focus-hero .btn.primary { min-width: 168px; }
 
+/* The big Done: an empty ring that fills and gets a check when you press it. */
+.done-ring {
+  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  border: 2.4px solid rgba(255, 255, 255, .85); transition: background .2s, border-color .2s, transform .2s;
+}
+.done-ring svg { width: 16px; height: 16px; color: var(--purple-500); }
+.done-ring path { stroke-dasharray: 24; stroke-dashoffset: 24; }
+.focus-done:hover .done-ring { background: rgba(255, 255, 255, .14); }
+.focus-done.is-celebrating .done-ring { background: #fff; border-color: #fff; animation: ring-pop .45s cubic-bezier(.3, 1.6, .5, 1); }
+.focus-done.is-celebrating .done-ring path { stroke-dashoffset: 0; transition: stroke-dashoffset .3s .12s ease-out; }
+.focus-done.is-celebrating { animation: btn-glow .9s ease-out; }
+.focus-hero.is-celebrating { animation: hero-glow .95s ease-out; }
+@keyframes ring-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes btn-glow { 0% { box-shadow: 0 0 0 0 rgba(187, 146, 214, .7); } 100% { box-shadow: 0 0 0 18px rgba(187, 146, 214, 0); } }
+@keyframes hero-glow {
+  0% { border-color: var(--purple-700); }
+  30% { border-color: var(--purple-300); box-shadow: 0 0 40px rgba(154, 99, 191, .45); }
+  100% { border-color: var(--purple-700); box-shadow: none; }
+}
+
+.confetti { position: fixed; z-index: 100; width: 0; height: 0; pointer-events: none; }
+.confetti i {
+  position: absolute; left: -4px; top: -3px; width: 8px; height: 6px; border-radius: 2px; opacity: 0;
+  animation: confetti 1.2s cubic-bezier(.15, .7, .3, 1) forwards;
+}
+@keyframes confetti {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(.6); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 90px)) rotate(var(--rot)) scale(1); }
+}
+
 .focus-group { margin-top: 44px; }
 .focus-row { padding-inline-end: 8px; }
 .focus-row.is-next { padding: 20px 18px 20px 22px; border-radius: 16px; gap: 16px; }
