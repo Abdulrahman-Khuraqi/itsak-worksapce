@@ -22,7 +22,7 @@
       save: 'Save', cancel: 'Cancel', close: 'Close', delete: 'Delete', edit: 'Edit',
       noDesk: 'No desk', allDesks: 'All desks', search: 'Search',
       notesShort: 'Notes', moreMenu: 'More', mainNav: 'Main', dueCount: '{n} due',
-      open: 'Open', all: 'All', sortDue: 'By deadline', sortNew: 'Newest first', sortMine: 'My order',
+      open: 'Open', active: 'Without waiting', all: 'All', sortDue: 'By deadline', sortNew: 'Newest first', sortMine: 'My order',
       dragToMove: 'Drag to change the order (or use the arrow keys)', sortHint: 'Drag ⋮⋮ to change the order',
       markDone: 'Mark as done', markOpen: 'Mark as not done',
       confirmTask: 'Delete this task?', confirmNote: 'Delete this note?',
@@ -62,7 +62,7 @@
       save: 'حفظ', cancel: 'إلغاء', close: 'إغلاق', delete: 'حذف', edit: 'تعديل',
       noDesk: 'بدون مكتب', allDesks: 'كل المكاتب', search: 'بحث',
       notesShort: 'الملاحظات', moreMenu: 'المزيد', mainNav: 'القائمة الرئيسية', dueCount: '{n} مستحقة',
-      open: 'المفتوحة', all: 'الكل', sortDue: 'حسب الموعد', sortNew: 'الأحدث أولًا', sortMine: 'ترتيبي',
+      open: 'المفتوحة', active: 'بدون المهام بانتظار', all: 'الكل', sortDue: 'حسب الموعد', sortNew: 'الأحدث أولًا', sortMine: 'ترتيبي',
       dragToMove: 'اسحب لتغيير الترتيب (أو استخدم الأسهم)', sortHint: 'اسحب ⋮⋮ لتغيير الترتيب',
       markDone: 'تحديد كمنجزة', markOpen: 'إلغاء الإنجاز',
       confirmTask: 'حذف هذه المهمة؟', confirmNote: 'حذف هذه الملاحظة؟',
@@ -105,7 +105,7 @@
     data: { desks: [], tasks: [], notes: [] },
     lang: (store.get('lang') || (navigator.language || '').slice(0, 2)) === 'ar' ? 'ar' : 'en',
     route: { view: 'focus', id: null },
-    filters: { q: '', desk: '', status: 'open', sort: 'mine', noteQ: '', noteDesk: '' },
+    filters: { q: '', desk: '', status: 'active', sort: 'mine', noteQ: '', noteDesk: '' },
     month: [now.getFullYear(), now.getMonth()],
   };
 
@@ -617,7 +617,7 @@
     const f = state.filters;
     const q = f.q.trim().toLowerCase();
     const list = state.data.tasks.filter((t) =>
-      (f.status === 'all' || (f.status === 'open' ? isOpen(t) : t.status === f.status)) &&
+      (f.status === 'all' || (f.status === 'active' ? isOpen(t) && t.status !== 'waiting' : f.status === 'open' ? isOpen(t) : t.status === f.status)) &&
       (!f.desk || (f.desk === 'none' ? !t.deskId : t.deskId === f.desk)) &&
       (!q || (t.title + ' ' + t.notes).toLowerCase().includes(q)),
     ).sort(f.sort === 'new' ? (a, b) => b.created.localeCompare(a.created)
@@ -630,6 +630,7 @@
         <input type="search" id="f-q" data-filter="q" value="${esc(f.q)}" placeholder="${esc(tr('search'))}" aria-label="${esc(tr('search'))}" dir="auto">
         <select id="f-desk" data-filter="desk" aria-label="${esc(tr('desk'))}">${deskOptions(f.desk, { any: true })}</select>
         <select id="f-status" data-filter="status" aria-label="${esc(tr('status'))}">
+          <option value="active" ${f.status === 'active' ? 'selected' : ''}>${tr('active')}</option>
           <option value="open" ${f.status === 'open' ? 'selected' : ''}>${tr('open')}</option>
           ${options(STATUSES, f.status)}
           <option value="all" ${f.status === 'all' ? 'selected' : ''}>${tr('all')}</option>
