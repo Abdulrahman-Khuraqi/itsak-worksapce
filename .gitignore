@@ -6,3 +6,4 @@ data/backups/
 config.local.php
 .DS_Store
 Thumbs.db
+web/node_modules/

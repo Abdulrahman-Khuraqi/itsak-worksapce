@@ -1,6 +1,6 @@
 # Itsak Workspace
 
-A small personal workspace for organising work: **desks** (one per client, project or area), **tasks with deadlines**, and **notes & info**. Built with plain PHP and one JSON file. There's no database and no build step.
+A small personal workspace for organising work: **desks** (one per client, project or area), **tasks with deadlines**, and **notes & info**. Built with plain PHP and one JSON file, no database. The interface is React with [shadcn/ui](https://ui.shadcn.com) components, built into `assets/app/` (the built files are committed, so running the workspace needs only PHP).
 
 ## Run it
 
@@ -12,6 +12,21 @@ You need PHP 8.1 or newer.
 
 The first time it opens it creates `data/workspace.json` with some starter desks, tasks and notes. Edit or delete them.
 
+## Changing the interface
+
+The interface lives in `web/` (Vite, React, TypeScript, Tailwind CSS and shadcn/ui). You need Node 20 or newer.
+
+```bash
+cd web
+npm install
+npm run dev      # http://localhost:5173, talks to the PHP server on :8080 (start that too)
+npm run build    # writes assets/app/app.js and app.css, commit these
+```
+
+- shadcn/ui components are in `web/src/components/ui/` (button, input, textarea, select, dialog, drawer, alert-dialog, checkbox, toggle-group, badge, card, progress, popover, calendar, sonner, …). Add more from the [shadcn/ui registry](https://ui.shadcn.com/docs/components) the usual way (`npx shadcn@latest add <name>` inside `web/`).
+- Pages are in `web/src/views/`, the shared pieces in `web/src/components/`, text in both languages in `web/src/lib/i18n.ts`.
+- Every deploy runs `npm ci && npm run build` again, so the live site always gets a fresh build.
+
 ## What's inside
 
 | Page | What it shows |
@@ -22,24 +37,24 @@ The first time it opens it creates `data/workspace.json` with some starter desks
 | **Calendar** | Month view of deadlines. Click a day number to add a task on that day. |
 | **Notes & info** | Links, contacts, ideas, meeting notes. Links become clickable. Pin a note to show it on Today. |
 
-On a phone it works like an app: a tab bar at the bottom (Today, Desks, **+** new task, Tasks, Notes), the calendar and a **⋯** menu (language, backup, sign out) at the top, and edit windows that slide up from the bottom. Buttons are finger-sized (44px) and fields use 16px text so the phone does not zoom in.
+On a phone it works like an app: a tab bar at the bottom (Today, Desks, **+** new task, Tasks, Notes), the calendar and a **⋯** menu (language, backup, sign out) at the top, and edit windows that slide up from the bottom (shadcn Drawer; on larger screens they are a centred Dialog). Buttons are finger-sized (44px) and fields use 16px text so the phone does not zoom in.
 
 **Install it on your phone:** open the site, then *Share → Add to Home Screen* (iPhone) or *⋮ → Add to Home screen / Install app* (Android). It opens full screen with the Itsak icon.
 
 Other things:
 
 - **English / العربية:** the switch at the bottom of the sidebar. The Arabic view is fully right to left.
-- **Your own order:** drag the ⋮⋮ handle (mouse or finger) to reorder tasks on the Tasks page ("My order"), on Today (Due today, In progress, No deadline) and on a desk's board, where you can also drag between To do / Doing / Done. With the handle selected, the arrow keys move a task too.
+- **Your own order:** drag the ⋮⋮ handle (mouse or finger) to reorder tasks on the Tasks page ("My order"), on Today (Due today, In progress, No deadline) and on a desk's board, where you can also drag between To do / Doing / Done. With the handle selected, the arrow keys move a task too (or Space to pick it up, arrows, Space to drop).
 - **Waiting:** set a task to *Waiting* when it is blocked on someone else (files from the client, a service that is down) and note what for. Waiting tasks get their own group on Today and their own column on the board, and they do not count as overdue.
 - **Steps:** break a task into a checklist inside the task window; rows show progress like `2/5`.
 - **Undo:** completing or deleting a task (or deleting a note) shows an Undo button for a few seconds.
-- **Quick deadlines:** No date / Today / Tomorrow / Next week buttons when adding or editing a task.
+- **Quick deadlines:** No date / Today / Tomorrow / Next week buttons when adding or editing a task, and a calendar button for any other day.
 - **Keyboard:** press `N` anywhere to add a task. On phones, use the + in the tab bar.
 - **Export backup** downloads everything as one JSON file. **Import backup** puts it back (and keeps a copy of what was there).
 
 ## Live site: ws.brxel.co
 
-Every push to the `main` or `site-dev` branch uploads the workspace to Hostinger automatically (`.github/workflows/deploy.yml`).
+Every push to the `main` or `site-dev` branch builds the interface and uploads the workspace to Hostinger automatically (`.github/workflows/deploy.yml`). The `web/` source folder is not uploaded.
 
 - Needs two repository secrets: `FTP_USERNAME` and `FTP_PASSWORD` (Settings → Secrets and variables → Actions). The FTP server is `82.198.230.29`; to change it, add a repository **variable** `FTP_HOST`.
 - Uploads into the FTP account's own folder (`.../brxel.co/public_html/ws`). To use another folder, add a repository **variable** `FTP_DIR`.
@@ -83,7 +98,7 @@ define('APP_PASSWORD', 'choose-a-long-password');
 
 ## Brand
 
-- Main colour black. Primary purple `#662d8b`, secondary orange `#ff9a1c`, accent red `#ff0000`, neutrals Tailwind zinc. All are defined as CSS variables at the top of `assets/css/app.css`.
+- Main colour black. Primary purple `#662d8b`, secondary orange `#ff9a1c`, accent red `#ff0000`, neutrals Tailwind zinc. They are the shadcn/ui theme variables (`--primary`, `--background`, …) and the `brand-*`, `sun-*` and `alert-*` colours at the top of `web/src/index.css`.
 - Fonts: Nexa (English headings) and Graphik Arabic (Arabic and body). See `assets/fonts/README.md` for the file names to drop in.
 - Logos are in `assets/img/`. `logo-full-white.svg` and `logo-icon-white.svg` are white versions of the supplied logos for the black background.
 
@@ -98,6 +113,6 @@ app/model.php        record shapes and input cleaning
 app/store.php        reading/writing the JSON with a file lock, daily backups
 app/seed.php         starter content for the first run
 app/auth.php         optional password
-assets/js/app.js     the interface (plain JavaScript)
-assets/css/app.css   styles and brand colours
+assets/app/          the built interface (app.js, app.css), made from web/
+web/                 the interface source: React + shadcn/ui (see "Changing the interface")
 ```

@@ -1,0 +1,119 @@
+/* Itsak Workspace theme for shadcn/ui. The app is dark only: black is the main colour,
+   purple the primary, orange and red the accents, Tailwind zinc the neutrals.
+   Layout uses logical classes (ms-, ps-, start-) so the Arabic view mirrors on its own. */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* The sign-in form is plain PHP; scan it too so its classes end up in app.css. */
+@source "../../index.php";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Brand fonts. local() picks them up when installed on the computer;
+   otherwise drop the files into assets/fonts (names in assets/fonts/README.md). */
+@font-face { font-family: "Nexa"; font-weight: 700; font-display: swap;
+  src: local("Nexa Bold"), local("Nexa-Bold"), url("../fonts/Nexa-Bold.woff2") format("woff2"), url("../fonts/Nexa-Bold.otf") format("opentype"), url("../fonts/Nexa-Bold.ttf") format("truetype"); }
+@font-face { font-family: "Nexa"; font-weight: 900; font-display: swap;
+  src: local("Nexa Heavy"), local("Nexa-Heavy"), url("../fonts/Nexa-Heavy.woff2") format("woff2"), url("../fonts/Nexa-Heavy.otf") format("opentype"), url("../fonts/Nexa-Heavy.ttf") format("truetype"); }
+@font-face { font-family: "Graphik Arabic"; font-weight: 400; font-display: swap;
+  src: local("Graphik Arabic"), local("GraphikArabic-Regular"), url("../fonts/GraphikArabic-Regular.woff2") format("woff2"), url("../fonts/GraphikArabic-Regular.otf") format("opentype"), url("../fonts/GraphikArabic-Regular.ttf") format("truetype"); }
+@font-face { font-family: "Graphik Arabic"; font-weight: 500; font-display: swap;
+  src: local("Graphik Arabic Medium"), local("GraphikArabic-Medium"), url("../fonts/GraphikArabic-Medium.woff2") format("woff2"), url("../fonts/GraphikArabic-Medium.otf") format("opentype"), url("../fonts/GraphikArabic-Medium.ttf") format("truetype"); }
+@font-face { font-family: "Graphik Arabic"; font-weight: 700; font-display: swap;
+  src: local("Graphik Arabic Bold"), local("GraphikArabic-Bold"), url("../fonts/GraphikArabic-Bold.woff2") format("woff2"), url("../fonts/GraphikArabic-Bold.otf") format("opentype"), url("../fonts/GraphikArabic-Bold.ttf") format("truetype"); }
+
+:root {
+  color-scheme: dark;
+  --radius: 0.75rem;
+
+  --background: #000;
+  --foreground: #f4f4f5;
+  --card: #09090b;
+  --card-foreground: #f4f4f5;
+  --popover: #09090b;
+  --popover-foreground: #f4f4f5;
+  --primary: #662d8b;
+  --primary-foreground: #fff;
+  --secondary: #27272a;
+  --secondary-foreground: #f4f4f5;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #ff4d4d;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #bb92d6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@theme static {
+  /* Primary, purple 500 = #662d8b */
+  --color-brand-50: #f6f0fa; --color-brand-100: #ecdff4; --color-brand-200: #d6bce8; --color-brand-300: #bb92d6;
+  --color-brand-400: #9a63bf; --color-brand-500: #662d8b; --color-brand-600: #57257a; --color-brand-700: #471e63;
+  --color-brand-800: #37174d; --color-brand-900: #281038;
+  /* Secondary, orange 500 = #ff9a1c */
+  --color-sun-300: #ffc06b; --color-sun-500: #ff9a1c; --color-sun-900: #3d2306;
+  /* Tertiary, red 500 = #ff0000 */
+  --color-alert-400: #ff4d4d; --color-alert-500: #ff0000; --color-alert-900: #3d0606;
+
+  --font-sans: "Graphik Arabic", "Graphik", "Segoe UI", system-ui, -apple-system, Tahoma, sans-serif;
+  --font-head: "Nexa", "Graphik Arabic", "Segoe UI", system-ui, sans-serif;
+
+  /* Phones get the app layout (top bar, tab bar, bottom sheets) below 860px. */
+  --breakpoint-md: 54rem;
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { @apply bg-background text-foreground font-sans antialiased; font-size: 15px; line-height: 1.55; }
+  h1, h2, h3 { @apply font-head font-bold tracking-tight; line-height: 1.2; }
+  [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3 { letter-spacing: 0; }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+  /* Mixed Arabic/English text keeps its own direction but lines up with the page. */
+  html[dir="ltr"] :not(input):not(textarea)[dir="auto"] { text-align: left; }
+  html[dir="rtl"] :not(input):not(textarea)[dir="auto"] { text-align: right; }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8); cursor: pointer; }
+  @media (max-width: 54rem) {
+    html { -webkit-tap-highlight-color: transparent; }
+    body { overscroll-behavior-y: none; }
+    /* 16px text in fields so phones do not zoom in */
+    input, select, textarea, [data-slot="select-trigger"] { font-size: 16px !important; }
+  }
+}
+
+@layer utilities {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  /* Chevrons point the reading direction. */
+  [dir="rtl"] .rtl-flip { transform: scaleX(-1); }
+}
+
+body.is-sorting, body.is-sorting * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

@@ -41,33 +41,27 @@ $v = static fn (string $file) => $file . '?v=' . @filemtime(__DIR__ . '/' . $fil
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Workspace">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="<?= $v('assets/css/app.css') ?>">
+<link rel="stylesheet" href="<?= $v('assets/app/app.css') ?>">
 </head>
 <?php if (!auth_ok()): ?>
-<body class="login-page">
-  <form class="login" method="post">
-    <img src="assets/img/logo-full-white.svg" alt="Itsak.tech" class="login-logo">
-    <h1>Workspace</h1>
-    <label class="field">
-      <span>Password · كلمة المرور</span>
-      <input type="password" name="password" required autofocus autocomplete="current-password">
+<!-- Same look as the shadcn/ui Card, Input and Button used in the app (classes come from assets/app/app.css). -->
+<body class="grid min-h-screen place-items-center p-4">
+  <form method="post" data-slot="card" class="flex w-full max-w-[360px] flex-col gap-[18px] rounded-[18px] border bg-card p-8 text-card-foreground">
+    <img src="assets/img/logo-full-white.svg" alt="Itsak.tech" class="w-[170px]">
+    <h1 class="text-[28px] font-black">Workspace</h1>
+    <label class="flex flex-col gap-1.5">
+      <span class="text-[13px] font-medium text-muted-foreground">Password · كلمة المرور</span>
+      <input type="password" name="password" required autofocus autocomplete="current-password" data-slot="input"
+        class="h-10 w-full min-w-0 rounded-md border border-input bg-zinc-900 px-3 py-1 text-base shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50">
     </label>
-    <?php if ($error): ?><p class="login-error" role="alert">Wrong password · كلمة المرور غير صحيحة</p><?php endif; ?>
-    <button class="btn primary">Sign in · دخول</button>
+    <?php if ($error): ?><p class="m-0 text-sm text-destructive" role="alert">Wrong password · كلمة المرور غير صحيحة</p><?php endif; ?>
+    <button data-slot="button" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-all outline-none hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/50">Sign in · دخول</button>
   </form>
 </body>
 <?php else: ?>
 <body data-auth="<?= auth_enabled() ? '1' : '0' ?>">
-  <div class="app">
-    <aside class="side" id="side"></aside>
-    <main class="main" id="view" tabindex="-1"><p class="loading">…</p></main>
-  </div>
-  <nav class="tabbar" id="tabbar"></nav>
-  <dialog id="modal" class="modal"></dialog>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <form id="logout-form" method="post" hidden><input type="hidden" name="logout" value="1"></form>
-  <input type="file" id="import-file" accept="application/json,.json" hidden>
-  <script src="<?= $v('assets/js/app.js') ?>"></script>
+  <div id="root"><p class="p-10 text-muted-foreground">…</p></div>
+  <script type="module" src="<?= $v('assets/app/app.js') ?>"></script>
 </body>
 <?php endif; ?>
 </html>
