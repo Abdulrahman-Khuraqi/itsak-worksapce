@@ -1,17 +1,17 @@
 // The frame around every page: the sidebar on larger screens; on phones a compact top bar,
 // a tab bar at the bottom with a big + in the middle, and a "More" sheet.
 import * as React from 'react'
-import { CalendarDaysIcon, DownloadIcon, EllipsisIcon, FileTextIcon, GlobeIcon, LayoutGridIcon, ListChecksIcon, LogOutIcon, PlusIcon, SunIcon, UploadIcon, type LucideIcon } from 'lucide-react'
+import { CalendarDaysIcon, CrosshairIcon, DownloadIcon, EllipsisIcon, FileTextIcon, GlobeIcon, LayoutGridIcon, ListChecksIcon, LogOutIcon, PlusIcon, SunIcon, UploadIcon, type LucideIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
-import { deskColor, deskStats, isOpen, todayYmd } from '@/lib/data'
+import { deskColor, deskStats, focusQueue, isOpen, todayYmd } from '@/lib/data'
 import { Count, DeskDot } from '@/components/bits'
 import { exportData, signOut, useImport, useWorkspace, type View } from '@/app/workspace'
 
 const ICONS: Record<string, LucideIcon> = {
-  today: SunIcon, desks: LayoutGridIcon, tasks: ListChecksIcon, calendar: CalendarDaysIcon, notes: FileTextIcon,
+  focus: CrosshairIcon, today: SunIcon, desks: LayoutGridIcon, tasks: ListChecksIcon, calendar: CalendarDaysIcon, notes: FileTextIcon,
 }
 
 function useFootActions() {
@@ -29,7 +29,7 @@ const sideLink = 'flex w-full items-center gap-[11px] rounded-[9px] px-2.5 py-[9
 
 function Brand() {
   return (
-    <a href="#today" aria-label="Itsak.tech Workspace" className="flex flex-col gap-2 px-2.5 pt-0.5 pb-1.5 max-md:min-h-11 max-md:flex-row max-md:items-center max-md:p-0">
+    <a href="#focus" aria-label="Itsak.tech Workspace" className="flex flex-col gap-2 px-2.5 pt-0.5 pb-1.5 max-md:min-h-11 max-md:flex-row max-md:items-center max-md:p-0">
       <img src="assets/img/logo-full-white.svg" alt="" width={148} height={40} className="block h-auto w-[148px] max-md:w-24" />
       <span className="self-start rounded-md bg-brand-800 px-2 pt-[5px] pb-1 font-head text-[10.5px] leading-none font-bold tracking-[.16em] text-brand-200 uppercase rtl:tracking-normal max-md:self-center max-md:px-1.5 max-md:text-[9.5px]">
         Workspace
@@ -44,7 +44,7 @@ export function Sidebar({ current, urgent }: { current: View; urgent: number }) 
   const [moreOpen, setMoreOpen] = React.useState(false)
   const open = data.tasks.filter(isOpen)
   const nav: [View, number][] = [
-    ['today', urgent], ['desks', data.desks.length], ['tasks', open.length], ['calendar', 0], ['notes', data.notes.length],
+    ['focus', focusQueue(data).length], ['today', urgent], ['desks', data.desks.length], ['tasks', open.length], ['calendar', 0], ['notes', data.notes.length],
   ]
 
   return (
@@ -99,12 +99,15 @@ export function Sidebar({ current, urgent }: { current: View; urgent: number }) 
         ))}
       </div>
 
-      {/* Phone top bar: calendar and the More sheet */}
+      {/* Phone top bar: notes, calendar and the More sheet */}
       <div className="ms-auto hidden gap-0.5 max-md:flex">
-        <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 rounded-xl text-zinc-300', current === 'calendar' && 'bg-primary text-white hover:bg-primary')}>
+        <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 w-[42px] rounded-xl text-zinc-300', current === 'notes' && 'bg-primary text-white hover:bg-primary')}>
+          <a href="#notes" aria-label={tr('notes')} aria-current={current === 'notes' ? 'page' : undefined}><FileTextIcon className="size-[22px]" /></a>
+        </Button>
+        <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 w-[42px] rounded-xl text-zinc-300', current === 'calendar' && 'bg-primary text-white hover:bg-primary')}>
           <a href="#calendar" aria-label={tr('calendar')} aria-current={current === 'calendar' ? 'page' : undefined}><CalendarDaysIcon className="size-[22px]" /></a>
         </Button>
-        <Button variant="ghost" size="icon-lg" className="size-11 rounded-xl text-zinc-300" aria-haspopup="dialog" aria-label={tr('moreMenu')} onClick={() => setMoreOpen(true)}>
+        <Button variant="ghost" size="icon-lg" className="size-11 w-[42px] rounded-xl text-zinc-300" aria-haspopup="dialog" aria-label={tr('moreMenu')} onClick={() => setMoreOpen(true)}>
           <EllipsisIcon className="size-[22px]" />
         </Button>
       </div>
@@ -151,15 +154,15 @@ export function TabBar({ current, urgent }: { current: View; urgent: number }) {
   }
   return (
     <nav aria-label={tr('mainNav')} className="fixed inset-x-0 bottom-0 z-30 hidden grid-cols-5 items-end border-t bg-zinc-950/95 px-1.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-md backdrop-saturate-150 max-md:grid">
+      {tab('focus', tr('focus'))}
       {tab('today', tr('today'), urgent)}
-      {tab('desks', tr('desks'))}
       <button type="button" onClick={() => newTask()} aria-label={tr('newTask')} className="group self-center">
         <span className="mx-auto -mt-[26px] grid size-14 place-items-center rounded-full bg-primary text-white shadow-[0_8px_24px_rgba(102,45,139,.6),0_0_0_5px_#000] transition-transform group-active:scale-95">
           <PlusIcon className="size-7" strokeWidth={2.2} />
         </span>
       </button>
+      {tab('desks', tr('desks'))}
       {tab('tasks', tr('tasks'))}
-      {tab('notes', tr('notesShort'))}
     </nav>
   )
 }

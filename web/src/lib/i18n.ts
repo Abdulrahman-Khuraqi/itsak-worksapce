@@ -1,7 +1,7 @@
 // Every piece of text in English and Arabic. `{name}` is filled in by tr().
 export const I18N = {
   en: {
-    today: 'Today', desks: 'Desks', tasks: 'Tasks', calendar: 'Calendar', notes: 'Notes & info',
+    focus: 'Focus', today: 'Today', desks: 'Desks', tasks: 'Tasks', calendar: 'Calendar', notes: 'Notes & info',
     newTask: 'New task', editTask: 'Edit task', newDesk: 'New desk', editDesk: 'Edit desk', newNote: 'New note', editNote: 'Edit note',
     morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening',
     overdue: 'Overdue', dueToday: 'Due today', next7: 'Next 7 days', done7: 'Done, last 7 days',
@@ -15,7 +15,7 @@ export const I18N = {
     save: 'Save', cancel: 'Cancel', close: 'Close', delete: 'Delete', edit: 'Edit',
     noDesk: 'No desk', allDesks: 'All desks', search: 'Search',
     notesShort: 'Notes', moreMenu: 'More', mainNav: 'Main', dueCount: '{n} due',
-    open: 'Open', all: 'All', sortDue: 'By deadline', sortNew: 'Newest first', sortMine: 'My order',
+    open: 'Open', active: 'Without waiting', all: 'All', sortDue: 'By deadline', sortNew: 'Newest first', sortMine: 'My order',
     dragToMove: 'Drag to change the order (or use the arrow keys)', sortHint: 'Drag ⋮⋮ to change the order',
     markDone: 'Mark as done', markOpen: 'Mark as not done',
     confirmTask: 'Delete this task?', confirmNote: 'Delete this note?',
@@ -36,9 +36,12 @@ export const I18N = {
     noDeadline: 'No deadline', showAll: 'Show all {n}', checklist: 'Steps', addStep: 'Add a step and press Enter',
     removeStep: 'Remove step', undo: 'Undo', markedDone: 'Marked as done', taskDeleted: 'Task deleted', noteDeleted: 'Note deleted',
     noDate: 'No date', nextWeek: 'Next week', pickDate: 'Pick a date', sort: 'Sort', ok: 'OK', loading: 'Loading…',
+    focusNow: 'Work on this now', focusNext: 'Next', focusRest: 'After that', focusLeft: '{n} left for today', focusDone: '{n} done',
+    focusClear: 'Nothing left for today', focusClearSub: 'Enjoy the quiet, or pick something from your list.', seeTasks: 'See all tasks',
+    doneBtn: 'Done', doFirst: 'Do this first',
   },
   ar: {
-    today: 'اليوم', desks: 'المكاتب', tasks: 'المهام', calendar: 'التقويم', notes: 'ملاحظات ومعلومات',
+    focus: 'تركيز', today: 'اليوم', desks: 'المكاتب', tasks: 'المهام', calendar: 'التقويم', notes: 'ملاحظات ومعلومات',
     newTask: 'مهمة جديدة', editTask: 'تعديل المهمة', newDesk: 'مكتب جديد', editDesk: 'تعديل المكتب', newNote: 'ملاحظة جديدة', editNote: 'تعديل الملاحظة',
     morning: 'صباح الخير', afternoon: 'مساء الخير', evening: 'مساء الخير',
     overdue: 'متأخرة', dueToday: 'موعدها اليوم', next7: 'خلال 7 أيام', done7: 'أُنجزت آخر 7 أيام',
@@ -52,7 +55,7 @@ export const I18N = {
     save: 'حفظ', cancel: 'إلغاء', close: 'إغلاق', delete: 'حذف', edit: 'تعديل',
     noDesk: 'بدون مكتب', allDesks: 'كل المكاتب', search: 'بحث',
     notesShort: 'الملاحظات', moreMenu: 'المزيد', mainNav: 'القائمة الرئيسية', dueCount: '{n} مستحقة',
-    open: 'المفتوحة', all: 'الكل', sortDue: 'حسب الموعد', sortNew: 'الأحدث أولًا', sortMine: 'ترتيبي',
+    open: 'المفتوحة', active: 'بدون المهام بانتظار', all: 'الكل', sortDue: 'حسب الموعد', sortNew: 'الأحدث أولًا', sortMine: 'ترتيبي',
     dragToMove: 'اسحب لتغيير الترتيب (أو استخدم الأسهم)', sortHint: 'اسحب ⋮⋮ لتغيير الترتيب',
     markDone: 'تحديد كمنجزة', markOpen: 'إلغاء الإنجاز',
     confirmTask: 'حذف هذه المهمة؟', confirmNote: 'حذف هذه الملاحظة؟',
@@ -73,6 +76,9 @@ export const I18N = {
     noDeadline: 'بدون موعد', showAll: 'عرض الكل ({n})', checklist: 'الخطوات', addStep: 'أضف خطوة واضغط Enter',
     removeStep: 'حذف الخطوة', undo: 'تراجع', markedDone: 'تم الإنجاز', taskDeleted: 'تم حذف المهمة', noteDeleted: 'تم حذف الملاحظة',
     noDate: 'بدون موعد', nextWeek: 'الأسبوع القادم', pickDate: 'اختر تاريخًا', sort: 'الترتيب', ok: 'موافق', loading: 'جارٍ التحميل…',
+    focusNow: 'اشتغل على هذه الآن', focusNext: 'التالية', focusRest: 'بعد ذلك', focusLeft: 'متبقي لليوم: {n}', focusDone: 'أُنجز: {n}',
+    focusClear: 'لا شيء متبقٍ لليوم', focusClearSub: 'استمتع بالهدوء، أو اختر شيئًا من قائمتك.', seeTasks: 'عرض كل المهام',
+    doneBtn: 'تم', doFirst: 'ابدأ بهذه أولًا',
   },
 };
 

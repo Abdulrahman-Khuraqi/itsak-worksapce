@@ -7,8 +7,8 @@ import { toast } from 'sonner'
 import { api, ApiError, storage, todayYmd, parseYmd, type ItemType, type Workspace, type Task, type Desk, type Note } from '@/lib/data'
 import { translate, type Lang, type TKey } from '@/lib/i18n'
 
-export type View = 'today' | 'desks' | 'desk' | 'tasks' | 'calendar' | 'notes'
-const VIEWS: View[] = ['today', 'desks', 'desk', 'tasks', 'calendar', 'notes']
+export type View = 'focus' | 'today' | 'desks' | 'desk' | 'tasks' | 'calendar' | 'notes'
+const VIEWS: View[] = ['focus', 'today', 'desks', 'desk', 'tasks', 'calendar', 'notes']
 
 export interface Filters { q: string; desk: string; status: string; sort: string; noteQ: string; noteDesk: string }
 
@@ -51,7 +51,7 @@ export function useWorkspace() {
 
 function readHash() {
   const [view, id] = location.hash.replace(/^#/, '').split('/')
-  return { view: (VIEWS.includes(view as View) ? view : 'today') as View, id: id ? decodeURIComponent(id) : null }
+  return { view: (VIEWS.includes(view as View) ? view : 'focus') as View, id: id ? decodeURIComponent(id) : null }
 }
 
 export function WorkspaceProvider({ initial, children }: { initial: Workspace; children: React.ReactNode }) {
@@ -59,7 +59,7 @@ export function WorkspaceProvider({ initial, children }: { initial: Workspace; c
   const [lang, setLang] = React.useState<Lang>(() =>
     (storage.get('lang') || (navigator.language || '').slice(0, 2)) === 'ar' ? 'ar' : 'en')
   const [route, setRoute] = React.useState(readHash)
-  const [filters, setFilters] = React.useState<Filters>({ q: '', desk: '', status: 'open', sort: 'mine', noteQ: '', noteDesk: '' })
+  const [filters, setFilters] = React.useState<Filters>({ q: '', desk: '', status: 'active', sort: 'mine', noteQ: '', noteDesk: '' })
   const [month, setMonth] = React.useState<[number, number]>(() => [new Date().getFullYear(), new Date().getMonth()])
   const [editor, setEditor] = React.useState<Editor>(null)
   const [confirmState, setConfirmState] = React.useState<Ctx['confirmState']>(null)

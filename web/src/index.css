@@ -117,3 +117,22 @@
 body.is-sorting, body.is-sorting * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Finishing the Focus task: the ring pops, the button and card glow, confetti flies. */
+@keyframes ring-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes btn-glow { 0% { box-shadow: 0 0 0 0 rgba(187, 146, 214, .7); } 100% { box-shadow: 0 0 0 18px rgba(187, 146, 214, 0); } }
+@keyframes hero-glow {
+  0% { border-color: var(--color-brand-700); }
+  30% { border-color: var(--color-brand-300); box-shadow: 0 0 40px rgba(154, 99, 191, .45); }
+  100% { border-color: var(--color-brand-700); box-shadow: none; }
+}
+.confetti { position: fixed; z-index: 100; width: 0; height: 0; pointer-events: none; }
+.confetti i {
+  position: absolute; left: -4px; top: -3px; width: 8px; height: 6px; border-radius: 2px; opacity: 0;
+  animation: confetti 1.2s cubic-bezier(.15, .7, .3, 1) forwards;
+}
+@keyframes confetti {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(.6); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 90px)) rotate(var(--rot)) scale(1); }
+}

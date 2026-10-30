@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { useWorkspace } from '@/app/workspace'
 import { Sidebar, TabBar, useUrgent } from '@/app/shell'
 import { ConfirmQuestion, Editors } from '@/components/editors'
+import { FocusView } from '@/views/focus'
 import { TodayView } from '@/views/today'
 import { DesksView } from '@/views/desks'
 import { DeskView } from '@/views/desk'
@@ -40,6 +41,7 @@ export function App() {
   }, [editor, confirmState, newTask])
 
   const view = {
+    focus: <FocusView />,
     today: <TodayView />,
     desks: <DesksView />,
     desk: <DeskView id={route.id || ''} />,

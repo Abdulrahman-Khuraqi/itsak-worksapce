@@ -58,6 +58,13 @@ export const byDeadline = (a: Task, b: Task) =>
   PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
   byOrder(a, b)
 
+// The day's work, in the order you set: overdue, due today and in progress. Waiting tasks are not yours to do yet.
+export function focusQueue(data: Workspace, today = todayYmd()) {
+  return data.tasks
+    .filter((t) => isOpen(t) && t.status !== 'waiting' && (t.status === 'doing' || (t.due && t.due <= today)))
+    .sort(byOrder)
+}
+
 export function deskStats(data: Workspace, id: string) {
   const tasks = data.tasks.filter((t) => t.deskId === id)
   const open = tasks.filter(isOpen)

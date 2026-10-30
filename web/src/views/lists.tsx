@@ -29,7 +29,7 @@ export function TasksView() {
   const { tr, data, filters: f, setFilter } = useWorkspace()
   const q = f.q.trim().toLowerCase()
   const list = data.tasks.filter((t) =>
-    (f.status === 'all' || (f.status === 'open' ? isOpen(t) : t.status === f.status)) &&
+    (f.status === 'all' || (f.status === 'active' ? isOpen(t) && t.status !== 'waiting' : f.status === 'open' ? isOpen(t) : t.status === f.status)) &&
     (!f.desk || (f.desk === 'none' ? !t.deskId : t.deskId === f.desk)) &&
     (!q || (t.title + ' ' + t.notes).toLowerCase().includes(q)),
   ).sort(f.sort === 'new' ? (a, b) => b.created.localeCompare(a.created)
@@ -45,6 +45,7 @@ export function TasksView() {
         <Select value={f.status} onValueChange={(v) => setFilter('status', v)}>
           <SelectTrigger aria-label={tr('status')} className={filterSelect}><SelectValue /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="active">{tr('active')}</SelectItem>
             <SelectItem value="open">{tr('open')}</SelectItem>
             {STATUSES.map((s) => <SelectItem key={s} value={s}>{tr(s)}</SelectItem>)}
             <SelectItem value="all">{tr('all')}</SelectItem>

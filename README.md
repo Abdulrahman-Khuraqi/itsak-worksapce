@@ -31,13 +31,14 @@ npm run build    # writes assets/app/app.js and app.css, commit these
 
 | Page | What it shows |
 |---|---|
+| **Focus** (opens first) | Just the day's work, one step at a time: the task to work on now, the next two, then the rest. Overdue, due today and in progress; waiting tasks stay out of the way. Tick steps and press *Done* right on it; the arrow on a task moves it to the front. |
 | **Today** | Overdue, due today, next 7 days, in progress, tasks without a deadline, each task on its own card. Desk progress. Pinned notes. |
 | **Desks** | One card per desk with open tasks, overdue count and next deadline. Open a desk for its To do / Doing / Waiting / Done board (drag cards between columns) and its notes. |
 | **Tasks** | Every task, with search and filters by desk and status. |
 | **Calendar** | Month view of deadlines. Click a day number to add a task on that day. |
 | **Notes & info** | Links, contacts, ideas, meeting notes. Links become clickable. Pin a note to show it on Today. |
 
-On a phone it works like an app: a tab bar at the bottom (Today, Desks, **+** new task, Tasks, Notes), the calendar and a **⋯** menu (language, backup, sign out) at the top, and edit windows that slide up from the bottom (shadcn Drawer; on larger screens they are a centred Dialog). Buttons are finger-sized (44px) and fields use 16px text so the phone does not zoom in.
+On a phone it works like an app: a tab bar at the bottom (Focus, Today, **+** new task, Desks, Tasks), notes, the calendar and a **⋯** menu (language, backup, sign out) at the top, and edit windows that slide up from the bottom (shadcn Drawer; on larger screens they are a centred Dialog). Buttons are finger-sized (44px) and fields use 16px text so the phone does not zoom in.
 
 **Install it on your phone:** open the site, then *Share → Add to Home Screen* (iPhone) or *⋮ → Add to Home screen / Install app* (Android). It opens full screen with the Itsak icon.
 

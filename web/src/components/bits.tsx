@@ -86,12 +86,12 @@ export function WaitingPill({ task }: { task: Task }) {
   )
 }
 
-// The round-cornered box on each task; marking done offers Undo for a few seconds.
-export function DoneCheck({ task, className }: { task: Task; className?: string }) {
+// Marks a task done (with Undo for a few seconds) or open again.
+export function useToggleTask() {
   const { tr, saveItem } = useWorkspace()
-  const done = !isOpen(task)
-  const toggle = async () => {
+  return async (task: Task) => {
     const before = { ...task }
+    const done = !isOpen(task)
     try {
       await saveItem('tasks', { ...task, status: done ? 'todo' : 'done' }, '')
       if (!done) {
@@ -99,6 +99,14 @@ export function DoneCheck({ task, className }: { task: Task; className?: string 
       }
     } catch { /* toast already shown */ }
   }
+}
+
+// The round-cornered box on each task.
+export function DoneCheck({ task, className }: { task: Task; className?: string }) {
+  const { tr } = useWorkspace()
+  const toggleTask = useToggleTask()
+  const done = !isOpen(task)
+  const toggle = () => toggleTask(task)
   return (
     <button
       type="button"
