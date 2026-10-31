@@ -1,7 +1,7 @@
 // The frame around every page: the sidebar on larger screens; on phones a compact top bar,
 // a tab bar at the bottom with a big + in the middle, and a "More" sheet.
 import * as React from 'react'
-import { CalendarDaysIcon, CrosshairIcon, DownloadIcon, EllipsisIcon, FileTextIcon, GlobeIcon, LayoutGridIcon, ListChecksIcon, LogOutIcon, PlusIcon, SunIcon, TagIcon, UploadIcon, type LucideIcon } from 'lucide-react'
+import { CalendarDaysIcon, CrosshairIcon, DownloadIcon, EllipsisIcon, FileTextIcon, GlobeIcon, LayoutGridIcon, ListChecksIcon, LogOutIcon, PlusIcon, SunIcon, UploadIcon, type LucideIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
@@ -11,7 +11,7 @@ import { Count, DeskDot } from '@/components/bits'
 import { exportData, signOut, useImport, useWorkspace, type View } from '@/app/workspace'
 
 const ICONS: Record<string, LucideIcon> = {
-  focus: CrosshairIcon, today: SunIcon, desks: LayoutGridIcon, tasks: ListChecksIcon, calendar: CalendarDaysIcon, notes: FileTextIcon, prices: TagIcon,
+  focus: CrosshairIcon, today: SunIcon, desks: LayoutGridIcon, tasks: ListChecksIcon, calendar: CalendarDaysIcon, notes: FileTextIcon,
 }
 
 function useFootActions() {
@@ -44,7 +44,7 @@ export function Sidebar({ current, urgent }: { current: View; urgent: number }) 
   const [moreOpen, setMoreOpen] = React.useState(false)
   const open = data.tasks.filter(isOpen)
   const nav: [View, number][] = [
-    ['focus', focusQueue(data).length], ['today', urgent], ['desks', data.desks.length], ['tasks', open.length], ['calendar', 0], ['notes', data.notes.length], ['prices', data.products.filter((p) => p.final == null).length],
+    ['focus', focusQueue(data).length], ['today', urgent], ['desks', data.desks.length], ['tasks', open.length], ['calendar', 0], ['notes', data.notes.length],
   ]
 
   return (
@@ -101,9 +101,6 @@ export function Sidebar({ current, urgent }: { current: View; urgent: number }) 
 
       {/* Phone top bar: notes, calendar and the More sheet */}
       <div className="ms-auto hidden gap-0.5 max-md:flex">
-        <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 w-[42px] rounded-xl text-zinc-300', current === 'prices' && 'bg-primary text-white hover:bg-primary')}>
-          <a href="#prices" aria-label={tr('prices')} aria-current={current === 'prices' ? 'page' : undefined}><TagIcon className="size-[22px]" /></a>
-        </Button>
         <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 w-[42px] rounded-xl text-zinc-300', current === 'notes' && 'bg-primary text-white hover:bg-primary')}>
           <a href="#notes" aria-label={tr('notes')} aria-current={current === 'notes' ? 'page' : undefined}><FileTextIcon className="size-[22px]" /></a>
         </Button>

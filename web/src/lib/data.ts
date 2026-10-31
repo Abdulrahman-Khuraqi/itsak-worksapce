@@ -17,12 +17,7 @@ export interface Task {
   checklist: Step[]; waitingFor: string; order?: number | null; doneAt: string | null; created: string; updated: string
 }
 export interface Note { id: string; deskId: string; title: string; body: string; pinned: boolean; created: string; updated: string }
-// A product on the Prices page. Prices are in SAR; null = not known. final = the price you chose.
-export interface Product {
-  id: string; name: string; sku: string; ours: number | null; storeName: string; storePrice: number | null
-  amazon: number | null; final: number | null; created: string; updated: string
-}
-export interface Workspace { desks: Desk[]; tasks: Task[]; notes: Note[]; products: Product[] }
+export interface Workspace { desks: Desk[]; tasks: Task[]; notes: Note[] }
 export type ItemType = keyof Workspace
 
 // Desk colours as CSS colours, for dots, bars and edges.
