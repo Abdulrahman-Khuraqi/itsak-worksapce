@@ -4,11 +4,11 @@
 import * as React from 'react'
 import { toast } from 'sonner'
 
-import { api, ApiError, storage, todayYmd, parseYmd, type ItemType, type Workspace, type Task, type Desk, type Note } from '@/lib/data'
+import { api, ApiError, storage, todayYmd, parseYmd, type ItemType, type Workspace, type Task, type Desk, type Note, type Product } from '@/lib/data'
 import { translate, type Lang, type TKey } from '@/lib/i18n'
 
-export type View = 'focus' | 'today' | 'desks' | 'desk' | 'tasks' | 'calendar' | 'notes'
-const VIEWS: View[] = ['focus', 'today', 'desks', 'desk', 'tasks', 'calendar', 'notes']
+export type View = 'focus' | 'today' | 'desks' | 'desk' | 'tasks' | 'calendar' | 'notes' | 'prices'
+const VIEWS: View[] = ['focus', 'today', 'desks', 'desk', 'tasks', 'calendar', 'notes', 'prices']
 
 export interface Filters { q: string; desk: string; status: string; sort: string; noteQ: string; noteDesk: string }
 
@@ -16,6 +16,7 @@ export type Editor =
   | { kind: 'task'; item: Partial<Task> }
   | { kind: 'desk'; item: Partial<Desk> }
   | { kind: 'note'; item: Partial<Note> }
+  | { kind: 'product'; item: Partial<Product> }
   | null
 
 interface Ctx {
@@ -55,7 +56,7 @@ function readHash() {
 }
 
 export function WorkspaceProvider({ initial, children }: { initial: Workspace; children: React.ReactNode }) {
-  const [data, setData] = React.useState(initial)
+  const [data, setData] = React.useState(() => ({ ...initial, products: initial.products ?? [] }))
   const [lang, setLang] = React.useState<Lang>(() =>
     (storage.get('lang') || (navigator.language || '').slice(0, 2)) === 'ar' ? 'ar' : 'en')
   const [route, setRoute] = React.useState(readHash)
@@ -92,7 +93,7 @@ export function WorkspaceProvider({ initial, children }: { initial: Workspace; c
   const change = React.useCallback(async (body: object, message?: string) => {
     try {
       const json = await api(body, translate(lang, 'serverDown'))
-      setData(json.data)
+      setData({ ...json.data, products: json.data.products ?? [] })
       if (message) toast.success(message)
       return json
     } catch (err) {
@@ -164,7 +165,7 @@ export function useImport() {
       let parsed: unknown
       try { parsed = JSON.parse(await file.text()) } catch { toast.error(tr('badFile')); return }
       const data = parsed as Record<string, unknown> | null
-      if (!data || typeof data !== 'object' || !['desks', 'tasks', 'notes'].some((k) => Array.isArray(data[k]))) {
+      if (!data || typeof data !== 'object' || !['desks', 'tasks', 'notes', 'products'].some((k) => Array.isArray(data[k]))) {
         toast.error(tr('badFile'))
         return
       }

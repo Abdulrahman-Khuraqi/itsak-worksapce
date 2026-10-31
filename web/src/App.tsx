@@ -11,6 +11,7 @@ import { DesksView } from '@/views/desks'
 import { DeskView } from '@/views/desk'
 import { TasksView, NotesView } from '@/views/lists'
 import { CalendarView } from '@/views/calendar'
+import { PricesView } from '@/views/prices'
 
 export function App() {
   const { tr, lang, route, data, editor, confirmState, newTask } = useWorkspace()
@@ -48,6 +49,7 @@ export function App() {
     tasks: <TasksView />,
     calendar: <CalendarView />,
     notes: <NotesView />,
+    prices: <PricesView />,
   }[route.view]
 
   return (

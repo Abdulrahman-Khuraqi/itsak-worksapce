@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 // The shape of each record, and the cleaning applied to anything that comes from the browser or an import.
 
-const WS_TYPES = ['desks', 'tasks', 'notes'];
+const WS_TYPES = ['desks', 'tasks', 'notes', 'products'];
 const DESK_COLORS = ['purple', 'lilac', 'orange', 'amber', 'red', 'zinc', 'white'];
 // waiting: blocked on someone else (files from the client, a service that is down, …).
 const TASK_STATUSES = ['todo', 'doing', 'waiting', 'done'];
@@ -38,6 +38,18 @@ function clean_date($value): ?string
         return null;
     }
     return checkdate((int) $m[2], (int) $m[3], (int) $m[1]) ? $value : null;
+}
+
+// A price in SAR: a number from 0 up, rounded to halalas, or null when it is not known.
+function clean_price($value): ?float
+{
+    if (is_string($value)) {
+        $value = trim($value);
+    }
+    if ($value === null || $value === '' || !is_numeric($value) || (float) $value < 0) {
+        return null;
+    }
+    return round(min((float) $value, 10000000), 2);
 }
 
 function clean_id($value): ?string
@@ -130,6 +142,23 @@ function clean_item(string $type, array $in, ?array $old, array $deskIds, bool $
                 throw new InvalidArgumentException('A note needs a title or some text.');
             }
             return $item;
+
+        // A product on the Prices page: our price next to another Saudi store's and Amazon.sa's,
+        // and the price chosen after comparing them (null until one is chosen). All in SAR.
+        case 'products':
+            $item += [
+                'name' => clip($in['name'] ?? '', 200),
+                'sku' => clip($in['sku'] ?? '', 60),
+                'ours' => clean_price($in['ours'] ?? null),
+                'storeName' => clip($in['storeName'] ?? '', 80),
+                'storePrice' => clean_price($in['storePrice'] ?? null),
+                'amazon' => clean_price($in['amazon'] ?? null),
+                'final' => clean_price($in['final'] ?? null),
+            ];
+            if ($item['name'] === '') {
+                throw new InvalidArgumentException('A product needs a name.');
+            }
+            return $item;
     }
     throw new InvalidArgumentException('Unknown type.');
 }
@@ -216,7 +245,7 @@ function import_data(array $in): array
     if (!array_filter(WS_TYPES, fn ($type) => is_array($in[$type] ?? null))) {
         throw new InvalidArgumentException('This file is not a workspace backup.');
     }
-    $out = ['desks' => [], 'tasks' => [], 'notes' => []];
+    $out = ['desks' => [], 'tasks' => [], 'notes' => [], 'products' => []];
     $seen = [];
     foreach (WS_TYPES as $type) {
         $deskIds = array_column($out['desks'], 'id');

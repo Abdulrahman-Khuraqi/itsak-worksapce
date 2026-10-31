@@ -42,7 +42,7 @@ function ws_seed(): array
         [0, 'Brand colours', "Main: black\nPrimary purple #662d8b\nSecondary orange #ff9a1c\nAccent red #ff0000\nNeutrals: Tailwind zinc (#71717a)\nFonts: Nexa (English headings), Graphik Arabic (Arabic)", false],
     ];
 
-    $data = ['desks' => [], 'tasks' => [], 'notes' => []];
+    $data = ['desks' => [], 'tasks' => [], 'notes' => [], 'products' => []];
     foreach ($desks as $d) {
         $data['desks'][] = clean_item('desks', $d, null, []);
     }

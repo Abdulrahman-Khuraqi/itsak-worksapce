@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
-import { DESK_COLORS, PRIORITIES, STATUSES, addDays, deskColor, deskStats, parseYmd, todayYmd, ymd, type Desk, type Note, type Step, type Task } from '@/lib/data'
+import { DESK_COLORS, PRIORITIES, STATUSES, addDays, deskColor, deskStats, parseYmd, todayYmd, ymd, type Desk, type Note, type Product, type Step, type Task } from '@/lib/data'
 import { useWorkspace, type Editor } from '@/app/workspace'
 import { EditWindow, Field } from '@/components/edit-window'
 
@@ -313,6 +313,69 @@ function NoteEditor({ item, close }: { item: Partial<Note>; close: () => void })
   )
 }
 
+const priceValue = (v: number | null | undefined) => (v == null ? '' : String(v))
+const priceOrNull = (v: string) => (v.trim() === '' ? null : Number(v))
+
+function PriceInput({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
+  const { tr } = useWorkspace()
+  return (
+    <div dir="ltr" className="relative">
+      <Input id={id} type="number" inputMode="decimal" min={0} step="0.01" dir="ltr" value={value} onChange={(e) => onChange(e.target.value)}
+        className="h-10 bg-zinc-900 pr-12 max-md:h-11" />
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground">{tr('sar')}</span>
+    </div>
+  )
+}
+
+function ProductEditor({ item, close }: { item: Partial<Product>; close: () => void }) {
+  const { tr, saveItem, change, confirm } = useWorkspace()
+  const [name, setName] = React.useState(item.name || '')
+  const [sku, setSku] = React.useState(item.sku || '')
+  const [ours, setOurs] = React.useState(priceValue(item.ours))
+  const [storeName, setStoreName] = React.useState(item.storeName || '')
+  const [storePrice, setStorePrice] = React.useState(priceValue(item.storePrice))
+  const [amazon, setAmazon] = React.useState(priceValue(item.amazon))
+  const nameRef = React.useRef<HTMLInputElement>(null)
+
+  const submit = async () => {
+    if (!name.trim()) { nameRef.current?.focus(); return }
+    try {
+      await saveItem('products', {
+        ...item, id: item.id || '', name, sku, storeName,
+        ours: priceOrNull(ours), storePrice: priceOrNull(storePrice), amazon: priceOrNull(amazon), final: item.final ?? null,
+      })
+      close()
+    } catch { /* keep the window open */ }
+  }
+  const remove = async () => {
+    if (!(await confirm(tr('confirmProduct')))) return
+    try {
+      await change({ action: 'delete', type: 'products', id: item.id }, tr('productDeleted'))
+      close()
+    } catch { /* toast already shown */ }
+  }
+
+  return (
+    <>
+      <Field label={tr('product')} htmlFor="product-name">
+        <Input id="product-name" ref={nameRef} autoFocus required maxLength={200} dir="auto" value={name} onChange={(e) => setName(e.target.value)} className="h-10 bg-zinc-900 max-md:h-11" />
+      </Field>
+      <Field label={tr('sku')} htmlFor="product-sku">
+        <Input id="product-sku" maxLength={60} dir="auto" value={sku} onChange={(e) => setSku(e.target.value)} className="h-10 bg-zinc-900 max-md:h-11" />
+      </Field>
+      <Field label={tr('ourPrice')} htmlFor="product-ours"><PriceInput id="product-ours" value={ours} onChange={setOurs} /></Field>
+      <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+        <Field label={tr('otherStoreName')} htmlFor="product-store">
+          <Input id="product-store" maxLength={80} dir="auto" placeholder={tr('otherStorePh')} value={storeName} onChange={(e) => setStoreName(e.target.value)} className="h-10 bg-zinc-900 max-md:h-11" />
+        </Field>
+        <Field label={tr('otherStore')} htmlFor="product-store-price"><PriceInput id="product-store-price" value={storePrice} onChange={setStorePrice} /></Field>
+      </div>
+      <Field label={tr('amazonPrice')} htmlFor="product-amazon"><PriceInput id="product-amazon" value={amazon} onChange={setAmazon} /></Field>
+      <SubmitHook submit={submit} remove={item.id ? remove : undefined} />
+    </>
+  )
+}
+
 // Lets each editor hand its save and delete to the window's footer buttons.
 const SubmitContext = React.createContext<(s: { submit: () => void; remove?: () => void }) => void>(() => {})
 function SubmitHook({ submit, remove }: { submit: () => void; remove?: () => void }) {
@@ -321,7 +384,7 @@ function SubmitHook({ submit, remove }: { submit: () => void; remove?: () => voi
   return null
 }
 
-const TITLES = { task: ['newTask', 'editTask'], desk: ['newDesk', 'editDesk'], note: ['newNote', 'editNote'] } as const
+const TITLES = { task: ['newTask', 'editTask'], desk: ['newDesk', 'editDesk'], note: ['newNote', 'editNote'], product: ['newProduct', 'editProduct'] } as const
 
 export function Editors() {
   const { editor, openEditor, tr } = useWorkspace()
@@ -355,6 +418,7 @@ export function Editors() {
         {current.kind === 'task' && <TaskEditor key={n} item={current.item} close={close} />}
         {current.kind === 'desk' && <DeskEditor key={n} item={current.item} close={close} />}
         {current.kind === 'note' && <NoteEditor key={n} item={current.item} close={close} />}
+        {current.kind === 'product' && <ProductEditor key={n} item={current.item} close={close} />}
       </EditWindow>
     </SubmitContext.Provider>
   )
