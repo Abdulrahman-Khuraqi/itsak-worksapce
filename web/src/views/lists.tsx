@@ -4,13 +4,13 @@ import { PlusIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { STATUSES, byDeadline, byOrder, isOpen } from '@/lib/data'
+import { STATUSES, bucket, byDeadline, byOrder, isOpen, todayYmd, type Task } from '@/lib/data'
 import { useWorkspace } from '@/app/workspace'
 import { Empty, PageHead } from '@/components/bits'
 import { DeskSelect } from '@/components/editors'
 import { TaskList } from '@/components/task-list'
 import { NoteCard } from '@/components/note-card'
-import { NewTaskButton } from '@/views/today'
+import { Group, NewTaskButton, type GroupTone } from '@/views/today'
 
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { tr } = useWorkspace()
@@ -61,9 +61,25 @@ export function TasksView() {
         </Select>
       </div>
       {sortable && <p className="-mt-1.5 mb-3 text-[13px] text-zinc-500">{tr('sortHint')}</p>}
-      {list.length ? <TaskList tasks={list} sortable={sortable} /> : <Empty big>{tr('noTasks')}</Empty>}
+      {!list.length ? <Empty big>{tr('noTasks')}</Empty>
+        : f.sort === 'due' ? <ByDeadline tasks={list} />
+        : <TaskList tasks={list} sortable={sortable} />}
     </>
   )
+}
+
+// "By deadline": the list in groups, most urgent first, so you see at once what is late and what is today.
+const DEADLINE_GROUPS: [string, string, GroupTone][] = [
+  ['overdue', 'overdue', 'late'], ['today', 'dueToday', 'today'], ['week', 'next7', 'soon'], ['later', 'later', 'quiet'],
+  ['nodate', 'noDeadline', 'quiet'], ['waiting', 'waitingGroup', 'waiting'], ['done', 'done', 'done'],
+]
+
+function ByDeadline({ tasks }: { tasks: Task[] }) {
+  const { tr } = useWorkspace()
+  const today = todayYmd()
+  const groups = new Map<string, Task[]>()
+  tasks.forEach((t) => { const b = bucket(t, today); groups.set(b, [...(groups.get(b) || []), t]) })
+  return <>{DEADLINE_GROUPS.map(([key, title, tone]) => <Group key={key} title={tr(title)} tone={tone} tasks={groups.get(key) || []} />)}</>
 }
 
 export function NotesView() {

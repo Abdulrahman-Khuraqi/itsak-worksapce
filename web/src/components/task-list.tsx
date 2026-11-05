@@ -6,11 +6,10 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities'
 import { GripVerticalIcon } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { isOpen, type Desk, type Task } from '@/lib/data'
 import { useWorkspace } from '@/app/workspace'
-import { DeskChip, DoneCheck, DueBadge, StepsPill, WaitingPill } from '@/components/bits'
+import { DeskChip, DoingLabel, DoneCheck, DueBadge, PriorityFlag, StepsPill, WaitingPill, titleTone, useDue } from '@/components/bits'
 
 export interface HandleProps {
   setRef: (el: HTMLElement | null) => void
@@ -47,9 +46,17 @@ export function DragHandle({ handle, className }: { handle: HandleProps; classNa
   )
 }
 
-export const highEdge = 'shadow-[inset_3px_0_0_var(--color-sun-500)] rtl:shadow-[inset_-3px_0_0_var(--color-sun-500)]'
-export const liftedCard = 'relative z-10 bg-zinc-800 shadow-[0_10px_28px_rgba(0,0,0,.65),0_0_0_1px_var(--color-brand-400)]'
+export const liftedCard = 'relative z-10 rounded-xl bg-zinc-800 shadow-[0_10px_28px_rgba(0,0,0,.65),0_0_0_1px_var(--color-brand-400)]'
 
+// A thin bar on the start edge for tasks that are late (red) or due today (amber).
+const urgentEdge = {
+  late: 'before:bg-alert-500',
+  today: 'before:bg-sun-500',
+}
+const edgeBar = 'before:absolute before:inset-y-3 before:start-0 before:w-[3px] before:rounded-e-full rtl:before:rounded-e-none rtl:before:rounded-s-full'
+
+// One row: done box, title (with a flag if High) and a quiet line of details, and the deadline at the end,
+// always in the same place so the dates line up and can be read down the list.
 export function TaskCard({ task, showDesk = true, handle, lifted, style, setRef }: {
   task: Task
   showDesk?: boolean
@@ -58,55 +65,51 @@ export function TaskCard({ task, showDesk = true, handle, lifted, style, setRef 
   style?: React.CSSProperties
   setRef?: (el: HTMLElement | null) => void
 }) {
-  const { tr, data, openEditor } = useWorkspace()
-  const open = isOpen(task)
-  const high = task.priority === 'high' && open
+  const { data, openEditor } = useWorkspace()
+  const due = useDue()(task)
+  const edge = due && (due.tone === 'late' || due.tone === 'today') ? urgentEdge[due.tone] : ''
   const desk = showDesk ? data.desks.find((d) => d.id === task.deskId) : null
   return (
     <li
       ref={setRef}
       style={style}
       className={cn(
-        'flex items-center gap-3 rounded-[14px] border bg-card px-3.5 py-3.5 transition-[border-color,background-color] hover:border-zinc-700 md:gap-3.5 md:px-[18px]',
-        high && highEdge,
-        !open && 'bg-transparent',
+        'group/row relative flex items-center gap-3 px-3 py-3 transition-colors hover:bg-zinc-900/70 md:gap-3.5 md:px-4',
+        'first:rounded-t-[13px] last:rounded-b-[13px]',
+        edge && [edgeBar, edge],
         lifted && liftedCard,
       )}
     >
-      {handle && <DragHandle handle={handle} />}
+      {handle && <DragHandle handle={handle} className="md:-ms-1.5 md:w-6 md:opacity-0 md:transition-opacity md:group-hover/row:opacity-100 md:focus-visible:opacity-100" />}
       <DoneCheck task={task} />
       <button
         type="button"
         onClick={() => openEditor({ kind: 'task', item: task })}
-        className="group flex min-w-0 flex-1 flex-col gap-2 py-0.5 text-start outline-none max-md:min-h-12 max-md:justify-center focus-visible:rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        className="group flex min-w-0 flex-1 flex-col gap-1 py-0.5 text-start outline-none max-md:min-h-11 max-md:justify-center focus-visible:rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
-        <span
-          dir="auto"
-          className={cn(
-            'text-base leading-[1.45] font-medium [overflow-wrap:anywhere] text-zinc-50 underline-offset-4 group-hover:text-white group-hover:underline group-hover:decoration-zinc-600 max-md:text-[16.5px]',
-            !open && 'text-zinc-500 line-through group-hover:text-zinc-500',
-          )}
-        >
-          {task.title}
+        <span className="flex min-w-0 items-baseline">
+          <PriorityFlag task={task} />
+          <span dir="auto" className={cn('min-w-0 flex-1 text-[15.5px] leading-[1.45] [overflow-wrap:anywhere] underline-offset-4 group-hover:underline group-hover:decoration-zinc-600 max-md:text-base', titleTone(task))}>
+            {task.title}
+          </span>
         </span>
-        <TaskMeta task={task} desk={desk} tr={tr} />
+        <TaskMeta task={task} desk={desk} />
       </button>
+      <DueBadge task={task} className="shrink-0" />
     </li>
   )
 }
 
-function TaskMeta({ task, desk, tr }: { task: Task; desk: Desk | null | undefined; tr: (k: string) => string }) {
+function TaskMeta({ task, desk }: { task: Task; desk: Desk | null | undefined }) {
   const open = isOpen(task)
   const parts = [
-    task.due && <DueBadge key="due" task={task} />,
-    desk && <DeskChip key="desk" desk={desk} />,
-    task.status === 'doing' && <Badge key="doing" className="rounded-full bg-brand-800 text-brand-200">{tr('doing')}</Badge>,
-    task.status === 'waiting' && <WaitingPill key="waiting" task={task} />,
-    task.priority === 'high' && open && <Badge key="high" className="rounded-full bg-sun-900 text-sun-300">{tr('high')}</Badge>,
-    task.checklist?.length > 0 && <StepsPill key="steps" task={task} />,
+    desk && <DeskChip key="desk" desk={desk} className="text-zinc-400" />,
+    open && <DoingLabel key="doing" task={task} />,
+    <WaitingPill key="waiting" task={task} />,
+    <StepsPill key="steps" task={task} />,
   ].filter(Boolean)
-  if (!parts.length) return null
-  return <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">{parts}</span>
+  if (!desk && task.status !== 'doing' && task.status !== 'waiting' && !task.checklist?.length) return null
+  return <span className="flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1">{parts}</span>
 }
 
 function SortableTaskCard({ task, showDesk, onArrow }: { task: Task; showDesk?: boolean; onArrow: (id: string, dir: -1 | 1) => void }) {
@@ -148,7 +151,8 @@ export function TaskList({ tasks, showDesk = true, sortable = false }: { tasks: 
   const sensors = useSortSensors()
   const [ids, setIds] = useLocalOrder(tasks.map((t) => t.id))
   const byId = new Map(tasks.map((t) => [t.id, t]))
-  const list = 'flex flex-col gap-2.5'
+  // One calm panel per list, rows split by thin lines.
+  const list = 'flex flex-col divide-y divide-zinc-800/80 rounded-[14px] border bg-card'
 
   if (!sortable || tasks.length < 2) {
     return <ul className={list}>{tasks.map((t) => <TaskCard key={t.id} task={t} showDesk={showDesk} />)}</ul>

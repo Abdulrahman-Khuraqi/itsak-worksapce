@@ -93,9 +93,9 @@ function DeadlinePicker({ value, onChange }: { value: string; onChange: (v: stri
 const segItem = 'h-auto flex-1 rounded-[7px] px-1.5 py-[7px] text-[13.5px] font-medium text-muted-foreground hover:bg-transparent data-[state=on]:bg-zinc-700 data-[state=on]:text-white max-md:py-[11px] max-md:text-sm'
 const segTone: Record<string, string> = {
   doing: 'data-[state=on]:bg-primary',
-  waiting: 'data-[state=on]:bg-sun-300 data-[state=on]:text-black',
+  waiting: 'data-[state=on]:bg-zinc-500',
   done: 'data-[state=on]:bg-zinc-600',
-  high: 'data-[state=on]:bg-sun-500 data-[state=on]:text-black',
+  high: 'data-[state=on]:bg-brand-300 data-[state=on]:text-black',
 }
 
 function Segmented<T extends string>({ values, value, onChange, label }: { values: readonly T[]; value: T; onChange: (v: T) => void; label: string }) {

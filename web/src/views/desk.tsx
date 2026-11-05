@@ -9,31 +9,32 @@ import { ChevronLeftIcon, PencilIcon, PlusIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { STATUSES, byOrder, deskColor, isOpen, type Status, type Task } from '@/lib/data'
+import { STATUSES, byOrder, deskColor, type Status, type Task } from '@/lib/data'
 import { useWorkspace } from '@/app/workspace'
-import { DoneCheck, DueBadge, Empty, Linkified, PageHead, StepsPill } from '@/components/bits'
-import { DragHandle, highEdge, liftedCard, sortingBody, useSortSensors, type HandleProps } from '@/components/task-list'
+import { DoneCheck, DueBadge, Empty, Linkified, PageHead, PriorityFlag, StepsPill, titleTone } from '@/components/bits'
+import { DragHandle, liftedCard, sortingBody, useSortSensors, type HandleProps } from '@/components/task-list'
 import { NoteCard } from '@/components/note-card'
 import { NewTaskButton } from '@/views/today'
 
 type Columns = Record<Status, string[]>
 
-const columnDot: Record<Status, string> = { todo: 'bg-zinc-500', doing: 'bg-brand-400', waiting: 'bg-sun-300', done: 'bg-zinc-700' }
+const columnDot: Record<Status, string> = { todo: 'bg-zinc-500', doing: 'bg-brand-400', waiting: 'bg-zinc-400', done: 'bg-zinc-700' }
 
 function BoardCard({ task, handle, lifted, style, setRef }: { task: Task; handle: HandleProps; lifted?: boolean; style?: React.CSSProperties; setRef?: (el: HTMLElement | null) => void }) {
   const { openEditor } = useWorkspace()
-  const open = isOpen(task)
   return (
     <li ref={setRef} style={style} className={cn(
       'flex flex-wrap items-start gap-2 rounded-[10px] border border-zinc-800 bg-zinc-900 px-3 py-[11px] hover:border-zinc-700',
-      task.priority === 'high' && open && highEdge,
       lifted && liftedCard,
     )}>
       <DragHandle handle={handle} className="-ms-1 size-6 max-md:-my-1.5 max-md:-ms-2 max-md:size-9" />
       <DoneCheck task={task} />
       <button type="button" onClick={() => openEditor({ kind: 'task', item: task })} className="group flex min-w-0 flex-1 flex-col gap-2 text-start">
-        <span dir="auto" className={cn('font-medium [overflow-wrap:anywhere] text-zinc-50 underline-offset-4 group-hover:underline group-hover:decoration-zinc-600', !open && 'text-zinc-500 line-through')}>
-          {task.title}
+        <span className="flex min-w-0 items-baseline">
+          <PriorityFlag task={task} />
+          <span dir="auto" className={cn('min-w-0 flex-1 [overflow-wrap:anywhere] underline-offset-4 group-hover:underline group-hover:decoration-zinc-600', titleTone(task))}>
+            {task.title}
+          </span>
         </span>
         {task.notes && <span dir="auto" className="line-clamp-2 text-[13px] text-zinc-500">{task.notes.slice(0, 120)}</span>}
         <StepsPill task={task} className="mt-1 self-start" />

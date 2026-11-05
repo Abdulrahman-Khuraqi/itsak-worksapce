@@ -1,14 +1,12 @@
 // Home page: one task to work on now, the next two, then the rest. Nothing else.
 import * as React from 'react'
-import { ArrowUpIcon, CheckIcon, PencilIcon } from 'lucide-react'
+import { ArrowUpIcon, CheckIcon, FlagIcon, PencilIcon } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { focusQueue, isOpen, parseYmd, todayYmd, type Task } from '@/lib/data'
 import { useWorkspace } from '@/app/workspace'
-import { DeskChip, DoneCheck, DueBadge, Linkified, PageHead, StepsPill, useToggleTask } from '@/components/bits'
-import { highEdge } from '@/components/task-list'
+import { DeskChip, DoingLabel, DoneCheck, DueBadge, Linkified, PageHead, StepsPill, useDue, useToggleTask } from '@/components/bits'
 import { NewTaskButton } from '@/views/today'
 
 /* ---------- Finishing the Focus task: ring fills, confetti, a short chime ---------- */
@@ -83,8 +81,10 @@ function Meta({ task, className }: { task: Task; className?: string }) {
     <span className={cn('flex flex-wrap items-center gap-x-2.5 gap-y-1.5', className)}>
       <DueBadge task={task} />
       <DeskChip desk={desk} />
-      {task.status === 'doing' && <Badge className="rounded-full bg-brand-800 text-brand-200">{tr('doing')}</Badge>}
-      {task.priority === 'high' && <Badge className="rounded-full bg-sun-900 text-sun-300">{tr('high')}</Badge>}
+      <DoingLabel task={task} />
+      {task.priority === 'high' && isOpen(task) && (
+        <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-brand-300"><FlagIcon className="size-3.5 fill-current" />{tr('high')}</span>
+      )}
       <StepsPill task={task} />
     </span>
   )
@@ -109,6 +109,7 @@ function Hero({ task }: { task: Task }) {
     setCelebrating(false)
   }
 
+  const dueTone = useDue()(task)?.tone
   const toggleStep = (i: number) => {
     const checklist = task.checklist.map((s, k) => (k === i ? { ...s, done: !s.done } : s))
     saveItem('tasks', { ...task, checklist }, '').catch(() => {})
@@ -119,7 +120,9 @@ function Hero({ task }: { task: Task }) {
       aria-labelledby="focus-now"
       className={cn(
         'rounded-[20px] border border-brand-700 bg-[linear-gradient(155deg,var(--color-brand-900)_0%,var(--color-card)_62%)] px-5 pt-[26px] pb-[22px] md:rounded-[22px] md:px-9 md:pt-9 md:pb-8',
-        task.priority === 'high' && 'shadow-[inset_4px_0_0_var(--color-sun-500)] rtl:shadow-[inset_-4px_0_0_var(--color-sun-500)]',
+        // The edge tells the deadline, like everywhere else: red when late, amber when due today.
+        dueTone === 'late' && 'shadow-[inset_4px_0_0_var(--color-alert-500)] rtl:shadow-[inset_-4px_0_0_var(--color-alert-500)]',
+        dueTone === 'today' && 'shadow-[inset_4px_0_0_var(--color-sun-500)] rtl:shadow-[inset_-4px_0_0_var(--color-sun-500)]',
         celebrating && 'animate-[hero-glow_.95s_ease-out]',
       )}
     >
@@ -182,7 +185,6 @@ function Row({ task, kind, queue }: { task: Task; kind: 'next' | 'rest'; queue: 
       next
         ? 'gap-4 rounded-2xl bg-card py-4 ps-4 pe-2 md:py-5 md:ps-[22px] md:pe-[18px]'
         : 'gap-3.5 rounded-xl border-transparent py-2 ps-[18px] pe-2 hover:bg-card md:py-3',
-      next && task.priority === 'high' && isOpen(task) && highEdge,
     )}>
       <DoneCheck task={task} className={cn(next && 'size-[26px] rounded-full max-md:size-[26px]')} />
       <button type="button" onClick={() => openEditor({ kind: 'task', item: task })} className="group/open flex min-w-0 flex-1 flex-col gap-2 text-start max-md:min-h-12 max-md:justify-center">

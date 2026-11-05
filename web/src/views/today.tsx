@@ -30,15 +30,17 @@ export function NewTaskButton({ item }: { item?: Partial<Task> }) {
   )
 }
 
+// Colour means time, the same everywhere: red = late, amber = today, white = this week, grey = later.
 const tones = {
   late: { edge: 'before:bg-alert-500', value: 'text-alert-400', head: 'text-alert-400' },
-  today: { edge: 'before:bg-sun-500', value: '', head: 'text-sun-500' },
-  soon: { edge: 'before:bg-brand-400', value: '', head: 'text-brand-300' },
-  done: { edge: 'before:bg-zinc-500', value: '', head: '' },
-  doing: { edge: '', value: '', head: 'text-zinc-300' },
-  waiting: { edge: '', value: '', head: 'text-sun-300' },
-  quiet: { edge: '', value: '', head: 'text-muted-foreground' },
+  today: { edge: 'before:bg-sun-500', value: 'text-sun-300', head: 'text-sun-500' },
+  soon: { edge: 'before:bg-zinc-300', value: '', head: 'text-zinc-200' },
+  done: { edge: 'before:bg-zinc-600', value: 'text-zinc-400', head: 'text-zinc-500' },
+  doing: { edge: '', value: '', head: 'text-brand-300' },
+  waiting: { edge: '', value: '', head: 'text-zinc-400' },
+  quiet: { edge: '', value: '', head: 'text-zinc-500' },
 }
+export type GroupTone = keyof typeof tones
 
 function Stat({ tone, label, value }: { tone: keyof typeof tones; label: string; value: number }) {
   return (
@@ -52,7 +54,7 @@ function Stat({ tone, label, value }: { tone: keyof typeof tones; label: string;
   )
 }
 
-function Group({ title, tone, tasks, limit = 0, sortable = false }: { title: string; tone: keyof typeof tones; tasks: Task[]; limit?: number; sortable?: boolean }) {
+export function Group({ title, tone, tasks, limit = 0, sortable = false }: { title: string; tone: keyof typeof tones; tasks: Task[]; limit?: number; sortable?: boolean }) {
   const { tr } = useWorkspace()
   if (!tasks.length) return null
   return (
