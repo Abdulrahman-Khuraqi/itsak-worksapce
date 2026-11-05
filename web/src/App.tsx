@@ -12,11 +12,23 @@ import { DeskView } from '@/views/desk'
 import { TasksView, NotesView } from '@/views/lists'
 import { CalendarView } from '@/views/calendar'
 
+// The order pages sit in, so a page change knows which way to move.
+const PAGE_ORDER = ['focus', 'today', 'desks', 'desk', 'tasks', 'calendar', 'notes']
+
 export function App() {
   const { tr, lang, route, data, editor, confirmState, newTask } = useWorkspace()
   const urgent = useUrgent()
   const current = route.view === 'desk' ? 'desks' : route.view
   const mainRef = React.useRef<HTMLElement>(null)
+
+  // Going to a page further along the tabs slides it in from the end side; going back, from the start side.
+  const pageKey = route.view + '/' + (route.id ?? '')
+  const shown = React.useRef({ key: pageKey, view: route.view as string, dir: 'forward' })
+  if (shown.current.key !== pageKey) {
+    const from = PAGE_ORDER.indexOf(shown.current.view)
+    const to = PAGE_ORDER.indexOf(route.view)
+    shown.current = { key: pageKey, view: route.view, dir: to < from ? 'back' : 'forward' }
+  }
 
   React.useEffect(() => {
     const desk = route.view === 'desk' ? data.desks.find((d) => d.id === route.id) : null
@@ -55,7 +67,7 @@ export function App() {
       <div className="grid min-h-screen grid-cols-[248px_minmax(0,1fr)] max-md:grid-cols-[minmax(0,1fr)] max-md:content-start">
         <Sidebar current={current} urgent={urgent} />
         <main ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-[1280px] px-[clamp(16px,4vw,56px)] pt-9 pb-14 outline-none max-md:px-4 max-md:pt-5 max-md:pb-[calc(104px+env(safe-area-inset-bottom))]">
-          {view}
+          <div key={pageKey} className="page-enter" data-dir={shown.current.dir}>{view}</div>
         </main>
       </div>
       <TabBar current={current} urgent={urgent} />

@@ -136,3 +136,40 @@ body.is-sorting, body.is-sorting * { cursor: grabbing !important; user-select: n
   70% { opacity: 1; }
   100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 90px)) rotate(var(--rot)) scale(1); }
 }
+
+/* ---------- Moving between pages ----------
+   The new page fades in and glides into place, its sections one after another.
+   Phones: sideways, in the direction you are going (mirrored in Arabic). Larger screens: a gentle rise.
+   Only the start is held (fill-mode backwards), so nothing is left transformed afterwards. */
+:root {
+  --ease-out-soft: cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.36, .64, 1);
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translate3d(var(--page-x, 0), var(--page-y, 10px), 0); }
+  to { opacity: 1; transform: none; }
+}
+.page-enter > * { animation: page-in .5s var(--ease-out-soft) backwards; }
+.page-enter > :nth-child(2) { animation-delay: 45ms; }
+.page-enter > :nth-child(3) { animation-delay: 90ms; }
+.page-enter > :nth-child(4) { animation-delay: 135ms; }
+.page-enter > :nth-child(n+5) { animation-delay: 180ms; }
+@media (width < 54rem) {
+  .page-enter { --page-y: 0px; --page-x: 22px; }
+  .page-enter[data-dir="back"] { --page-x: -22px; }
+  [dir="rtl"] .page-enter { --page-x: -22px; }
+  [dir="rtl"] .page-enter[data-dir="back"] { --page-x: 22px; }
+  .page-enter > * { animation-duration: .42s; }
+}
+
+/* The highlight that slides to the active tab (sidebar and phone tab bar). */
+.nav-pill {
+  position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none;
+  transition: transform .45s var(--ease-out-soft), width .45s var(--ease-out-soft), height .45s var(--ease-out-soft), opacity .2s ease;
+}
+.nav-pill[data-spring] { transition-timing-function: var(--ease-spring), var(--ease-spring), var(--ease-spring), ease; }
+.nav-pill[data-instant] { transition: opacity .2s ease; }
+
+/* The active tab's icon gives a small pop as the highlight arrives. */
+@keyframes tab-pop { 0% { transform: scale(.82); } 55% { transform: scale(1.12); } 100% { transform: scale(1); } }
+[aria-current="page"] .tab-icon { animation: tab-pop .45s var(--ease-out-soft); }

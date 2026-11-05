@@ -25,6 +25,53 @@ function useFootActions() {
   ]
 }
 
+// A highlight that slides to the active item. Put the ref on the container, data-pill="<key>" on each item,
+// and render <NavPill> inside the container. It jumps (no slide) on first show and when the layout changes.
+function useSlidingPill(active: string) {
+  const { lang } = useWorkspace()
+  const ref = React.useRef<HTMLElement>(null)
+  const [box, setBox] = React.useState({ x: 0, y: 0, w: 0, h: 0, shown: false, instant: true })
+  const shown = React.useRef(false)
+
+  React.useLayoutEffect(() => {
+    const nav = ref.current
+    if (!nav) return
+    const measure = (instant: boolean) => {
+      const el = nav.querySelector<HTMLElement>(`[data-pill="${active}"]`)
+      if (!el || !nav.getClientRects().length) {
+        shown.current = false
+        setBox((b) => ({ ...b, shown: false, instant: true }))
+        return
+      }
+      const n = nav.getBoundingClientRect()
+      const r = el.getBoundingClientRect()
+      const next = { x: r.left - n.left - nav.clientLeft, y: r.top - n.top - nav.clientTop, w: r.width, h: r.height, shown: true, instant: instant || !shown.current }
+      shown.current = true
+      setBox(next)
+    }
+    measure(false)
+    // A ResizeObserver reports once when it starts; only later reports are real layout changes.
+    let first = true
+    const ro = new ResizeObserver(() => { if (first) first = false; else measure(true) })
+    ro.observe(nav)
+    return () => ro.disconnect()
+  }, [active, lang])
+
+  return [ref, box] as const
+}
+
+function NavPill({ box, className, spring }: { box: ReturnType<typeof useSlidingPill>[1]; className?: string; spring?: boolean }) {
+  return (
+    <span
+      aria-hidden
+      data-instant={box.instant ? '' : undefined}
+      data-spring={spring ? '' : undefined}
+      className={cn('nav-pill bg-primary', className)}
+      style={{ transform: `translate3d(${box.x}px, ${box.y}px, 0)`, width: box.w, height: box.h, opacity: box.shown ? 1 : 0 }}
+    />
+  )
+}
+
 const sideLink = 'flex w-full items-center gap-[11px] rounded-[9px] px-2.5 py-[9px] text-start font-medium text-zinc-300 no-underline hover:bg-zinc-900 hover:text-zinc-50 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
 
 function Brand() {
@@ -42,6 +89,7 @@ export function Sidebar({ current, urgent }: { current: View; urgent: number }) 
   const { tr, data, route, openEditor } = useWorkspace()
   const foot = useFootActions()
   const [moreOpen, setMoreOpen] = React.useState(false)
+  const [navRef, pill] = useSlidingPill(current)
   const open = data.tasks.filter(isOpen)
   const nav: [View, number][] = [
     ['focus', focusQueue(data).length], ['today', urgent], ['desks', data.desks.length], ['tasks', open.length], ['calendar', 0], ['notes', data.notes.length],
@@ -55,16 +103,17 @@ export function Sidebar({ current, urgent }: { current: View; urgent: number }) 
     )}>
       <Brand />
 
-      <nav aria-label={tr('mainNav')} className="flex flex-col gap-0.5 max-md:hidden">
+      <nav ref={navRef} aria-label={tr('mainNav')} className="relative flex flex-col gap-0.5 max-md:hidden">
+        <NavPill box={pill} className="rounded-[9px]" />
         {nav.map(([view, count]) => {
           const Icon = ICONS[view]
           const active = current === view
           return (
-            <a key={view} href={`#${view}`} aria-current={active ? 'page' : undefined}
-              className={cn(sideLink, active && 'bg-primary text-white hover:bg-primary hover:text-white')}>
-              <Icon className="size-[18px]" strokeWidth={1.8} />
+            <a key={view} href={`#${view}`} data-pill={view} aria-current={active ? 'page' : undefined}
+              className={cn(sideLink, 'relative z-[1] transition-colors duration-300', active && 'text-white hover:bg-transparent hover:text-white')}>
+              <Icon className="tab-icon size-[18px]" strokeWidth={1.8} />
               <span>{tr(view)}</span>
-              {count > 0 && <Count hot={view === 'today'} className={cn(active && 'bg-black/35 text-white')}>{count}</Count>}
+              {count > 0 && <Count hot={view === 'today'} className={cn('transition-colors duration-300', active && 'bg-black/35 text-white')}>{count}</Count>}
             </a>
           )
         })}
@@ -101,10 +150,10 @@ export function Sidebar({ current, urgent }: { current: View; urgent: number }) 
 
       {/* Phone top bar: notes, calendar and the More sheet */}
       <div className="ms-auto hidden gap-0.5 max-md:flex">
-        <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 w-[42px] rounded-xl text-zinc-300', current === 'notes' && 'bg-primary text-white hover:bg-primary')}>
+        <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 w-[42px] rounded-xl text-zinc-300 transition-colors duration-300', current === 'notes' && 'bg-primary text-white hover:bg-primary')}>
           <a href="#notes" aria-label={tr('notes')} aria-current={current === 'notes' ? 'page' : undefined}><FileTextIcon className="size-[22px]" /></a>
         </Button>
-        <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 w-[42px] rounded-xl text-zinc-300', current === 'calendar' && 'bg-primary text-white hover:bg-primary')}>
+        <Button asChild variant="ghost" size="icon-lg" className={cn('size-11 w-[42px] rounded-xl text-zinc-300 transition-colors duration-300', current === 'calendar' && 'bg-primary text-white hover:bg-primary')}>
           <a href="#calendar" aria-label={tr('calendar')} aria-current={current === 'calendar' ? 'page' : undefined}><CalendarDaysIcon className="size-[22px]" /></a>
         </Button>
         <Button variant="ghost" size="icon-lg" className="size-11 w-[42px] rounded-xl text-zinc-300" aria-haspopup="dialog" aria-label={tr('moreMenu')} onClick={() => setMoreOpen(true)}>
@@ -134,14 +183,15 @@ export function Sidebar({ current, urgent }: { current: View; urgent: number }) 
 // Phone navigation: four places and a big + in the middle, like an app.
 export function TabBar({ current, urgent }: { current: View; urgent: number }) {
   const { tr, newTask } = useWorkspace()
+  const [navRef, pill] = useSlidingPill(current)
   const tab = (view: View, label: string, badge = 0) => {
     const Icon = ICONS[view]
     const active = current === view
     return (
       <a href={`#${view}`} aria-current={active ? 'page' : undefined} aria-label={label + (badge ? ', ' + tr('dueCount', { n: badge }) : '')}
-        className={cn('group flex min-h-14 flex-col items-center justify-center gap-[3px] px-0.5 py-1 text-[11.5px] font-medium text-zinc-400 no-underline', active && 'text-white')}>
-        <span className={cn('relative grid h-[30px] w-14 place-items-center rounded-full transition-colors group-active:bg-zinc-800', active && 'bg-primary group-active:bg-primary')}>
-          <Icon className="size-[22px]" strokeWidth={1.8} />
+        className={cn('group relative z-[1] flex min-h-14 flex-col items-center justify-center gap-[3px] px-0.5 py-1 text-[11.5px] font-medium text-zinc-400 no-underline transition-colors duration-300', active && 'text-white')}>
+        <span data-pill={view} className={cn('relative grid h-[30px] w-14 place-items-center rounded-full transition-colors group-active:bg-zinc-800', active && 'group-active:bg-transparent')}>
+          <Icon className="tab-icon size-[22px]" strokeWidth={1.8} />
           {badge > 0 && (
             <span aria-hidden className="absolute -top-1 end-1.5 h-[18px] min-w-[18px] rounded-full bg-sun-500 px-[5px] text-center text-[11px] leading-[18px] font-bold text-black shadow-[0_0_0_2px_var(--color-zinc-950)]">
               {badge > 99 ? '99+' : badge}
@@ -153,10 +203,11 @@ export function TabBar({ current, urgent }: { current: View; urgent: number }) {
     )
   }
   return (
-    <nav aria-label={tr('mainNav')} className="fixed inset-x-0 bottom-0 z-30 hidden grid-cols-5 items-end border-t bg-zinc-950/95 px-1.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-md backdrop-saturate-150 max-md:grid">
+    <nav ref={navRef} aria-label={tr('mainNav')} className="fixed inset-x-0 bottom-0 z-30 hidden grid-cols-5 items-end border-t bg-zinc-950/95 px-1.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-md backdrop-saturate-150 max-md:grid">
+      <NavPill box={pill} spring className="rounded-full" />
       {tab('focus', tr('focus'))}
       {tab('today', tr('today'), urgent)}
-      <button type="button" onClick={() => newTask()} aria-label={tr('newTask')} className="group self-center">
+      <button type="button" onClick={() => newTask()} aria-label={tr('newTask')} className="group relative z-[1] self-center">
         <span className="mx-auto -mt-[26px] grid size-14 place-items-center rounded-full bg-primary text-white shadow-[0_8px_24px_rgba(102,45,139,.6),0_0_0_5px_#000] transition-transform group-active:scale-95">
           <PlusIcon className="size-7" strokeWidth={2.2} />
         </span>
