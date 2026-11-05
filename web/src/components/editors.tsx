@@ -314,8 +314,9 @@ function NoteEditor({ item, close }: { item: Partial<Note>; close: () => void })
 }
 
 // Lets each editor hand its save and delete to the window's footer buttons.
-const SubmitContext = React.createContext<(s: { submit: () => void; remove?: () => void }) => void>(() => {})
-function SubmitHook({ submit, remove }: { submit: () => void; remove?: () => void }) {
+type Actions = { submit: () => Promise<void> | void; remove?: () => Promise<void> | void }
+const SubmitContext = React.createContext<(s: Actions) => void>(() => {})
+function SubmitHook({ submit, remove }: Actions) {
   const register = React.useContext(SubmitContext)
   React.useEffect(() => register({ submit, remove }))
   return null
@@ -327,15 +328,38 @@ export function Editors() {
   const { editor, openEditor, tr } = useWorkspace()
   // Keep the last window's content while it animates closed.
   const [shown, setShown] = React.useState<{ editor: NonNullable<Editor>; n: number } | null>(null)
-  const actions = React.useRef<{ submit: () => void; remove?: () => void }>({ submit: () => {} })
+  const actions = React.useRef<Actions>({ submit: () => {} })
   const [hasDelete, setHasDelete] = React.useState(false)
-  const register = React.useCallback((a: { submit: () => void; remove?: () => void }) => {
+  const register = React.useCallback((a: Actions) => {
     actions.current = a
     setHasDelete(!!a.remove)
   }, [])
 
+  // One save or delete at a time. The ref stops a quick second click straight away
+  // (state updates land too late for that); the state shows "Saving…" on the button.
+  const [busy, setBusy] = React.useState<'save' | 'delete' | null>(null)
+  const busyRef = React.useRef(false)
+  const openRef = React.useRef(!!editor)
+  openRef.current = !!editor
+  const run = async (kind: 'save' | 'delete', action?: () => Promise<void> | void) => {
+    if (!action || busyRef.current) return
+    busyRef.current = true
+    setBusy(kind)
+    try {
+      await action()
+    } finally {
+      // If it worked the window is closing: stay locked so the closing window
+      // cannot be saved again. If it failed the window is still open: unlock it.
+      if (openRef.current) { busyRef.current = false; setBusy(null) }
+    }
+  }
+
   React.useEffect(() => {
-    if (editor) setShown((s) => ({ editor, n: (s?.n ?? 0) + 1 }))
+    if (editor) {
+      setShown((s) => ({ editor, n: (s?.n ?? 0) + 1 }))
+      busyRef.current = false
+      setBusy(null)
+    }
   }, [editor])
 
   if (!shown) return null
@@ -349,8 +373,9 @@ export function Editors() {
         open={!!editor}
         onOpenChange={(o) => { if (!o) close() }}
         title={title}
-        onSubmit={() => actions.current.submit()}
-        onDelete={hasDelete ? () => actions.current.remove?.() : undefined}
+        onSubmit={() => run('save', actions.current.submit)}
+        onDelete={hasDelete ? () => run('delete', actions.current.remove) : undefined}
+        busy={busy}
       >
         {current.kind === 'task' && <TaskEditor key={n} item={current.item} close={close} />}
         {current.kind === 'desk' && <DeskEditor key={n} item={current.item} close={close} />}
